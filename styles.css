@@ -79,8 +79,15 @@ main { padding-top: 14px; }
 .bw.up { color: #8fe3b1; }
 .bw.down { color: #9b9c8b; }
 .rsub-flag { width: 16px; height: 11px; display: inline-block; vertical-align: -1px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.14); margin: 0 1px; }
-.ptcol { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
-.pts-max { font-family: var(--font-display); font-size: 10.5px; color: var(--muted); letter-spacing: .2px; margin-top: 1px; }
+/* Eliminated marker */
+.elim {
+  display: inline-block; font-size: 10px; font-weight: 800; line-height: 1;
+  color: #fff; background: var(--down); border-radius: 4px; padding: 2px 5px;
+  vertical-align: middle; margin-left: 2px;
+}
+.elim-cell { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(251,113,133,.6); }
+.team-card.eliminated { opacity: .5; }
+.team-card.eliminated .tc-name { text-decoration: line-through; text-decoration-color: rgba(251,113,133,.6); }
 
 /* Differentials */
 #diffs { margin-top: 14px; }
@@ -197,4 +204,5 @@ input[type=number] { width: 60px; }
 .sync-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #fff; color: #111; padding: 10px 16px; border-radius: 10px; font-weight: 600; box-shadow: 0 8px 30px rgba(0,0,0,.4); z-index: 50; }
 .adv-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+.adv-controls { display: flex; gap: 10px; align-items: center; }
 .muted { color: var(--muted); font-size: 13px; }

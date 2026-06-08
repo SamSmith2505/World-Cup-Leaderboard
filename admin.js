@@ -27,6 +27,7 @@ async function load() {
   state = s.state || { matches: [], advancement: {}, meta: {} };
   state.matches = state.matches || [];
   state.advancement = state.advancement || {};
+  state.eliminated = state.eliminated || {};
   state.meta = state.meta || {};
   roster = r.roster || [];
   renderSyncInfo();
@@ -123,12 +124,20 @@ function renderAdvancement() {
     const row = document.createElement('div');
     row.className = 'adv-row';
     const opts = STAGES.map((s) => `<option value="${s.key}" ${s.key === cur ? 'selected' : ''}>${s.label}</option>`).join('');
+    const isOut = !!state.eliminated[t];
     row.innerHTML = `<span>${escapeHtml(t)} <span class="muted">· T${tierOf(t) ?? '?'}</span></span>
-      <select data-team="${attr(t)}">${opts}</select>`;
+      <span class="adv-controls">
+        <label class="muted"><input type="checkbox" class="elimchk" ${isOut ? 'checked' : ''}/> out</label>
+        <select data-team="${attr(t)}">${opts}</select>
+      </span>`;
     row.querySelector('select').addEventListener('change', (e) => {
       const v = e.target.value;
       if (v === 'none') delete state.advancement[t];
       else state.advancement[t] = v;
+    });
+    row.querySelector('.elimchk').addEventListener('change', (e) => {
+      if (e.target.checked) state.eliminated[t] = true;
+      else delete state.eliminated[t];
     });
     c.appendChild(row);
   }

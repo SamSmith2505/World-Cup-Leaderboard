@@ -1,5 +1,5 @@
 // Public page — leaderboard + points-by-team, with throttled auto-sync.
-import { compute, computeMovers, computeTeamPoints } from '/lib/scoring.js';
+import { compute, computeMovers, computeTeamPoints, eliminatedSet } from '/lib/scoring.js';
 import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl } from '/lib/config.js';
 
 const boardEl = document.getElementById('board');
@@ -12,6 +12,7 @@ const diffsBody = document.getElementById('diffsBody');
 
 const expanded = new Set();
 let lastData = null; // { state, snapshot, roster }
+let elimSet = new Set(); // eliminated teams (canonical names)
 
 // ---- tab switching ---------------------------------------------------------
 document.querySelectorAll('.tab').forEach((btn) => {
@@ -36,6 +37,7 @@ async function load() {
     ]);
     const state = stateRes.state || { matches: [], advancement: {}, meta: {} };
     lastData = { state, snapshot: stateRes.snapshot || null, roster: rosterRes.roster || [], rosterSource: rosterRes.source };
+    elimSet = eliminatedSet(state);
 
     const { standings, lastUpdated } = compute(state, lastData.roster);
     render(standings);
@@ -85,10 +87,7 @@ function rowEl(row) {
       <span class="name">${row.rank === 1 ? '👑 ' : ''}${escapeHtml(row.name)}</span>
       ${sub}
     </div>
-    <div class="ptcol">
-      <span class="pts">${fmt(row.total)}</span>
-      <span class="pts-max">max ${fmt(row.ceiling)}</span>
-    </div>
+    <span class="pts">${fmt(row.total)}</span>
     <span class="chev" aria-hidden="true">▸</span>`;
   head.addEventListener('click', () => {
     if (expanded.has(row.name)) expanded.delete(row.name); else expanded.add(row.name);
@@ -117,7 +116,7 @@ function breakdownTable(breakdown) {
     const tr = document.createElement('tr');
     const mult = TIER_MULTIPLIERS[tp.tier] ?? tp.multiplier ?? 1;
     tr.innerHTML = `
-      <td>${flagImg(tp.team, 'bd-flag')}${escapeHtml(tp.team)}${stageTag(tp.stage)}</td>
+      <td class="${isEliminated(tp.team) ? 'elim-cell' : ''}">${flagImg(tp.team, 'bd-flag')}${escapeHtml(tp.team)}${elimMark(tp.team)}${stageTag(tp.stage)}</td>
       <td>T${tp.tier ?? '?'}</td>
       <td class="num" title="match ${fmt(tp.matchPts)} + goals ${fmt(tp.goals)} + bonus ${fmt(tp.advBonus)}">${fmt(tp.raw)}</td>
       <td class="num">${mult}</td>
@@ -234,7 +233,7 @@ function emptyTeam(name) {
 function teamCard(r) {
   const s = r.src;
   const card = document.createElement('div');
-  card.className = 'team-card';
+  card.className = 'team-card' + (isEliminated(r.team) ? ' eliminated' : '');
   const items = [
     ['Group wins', s.groupWin.pts, s.groupWin.n ? `${s.groupWin.n}W` : ''],
     ['Group draws', s.groupDraw.pts, s.groupDraw.n ? `${s.groupDraw.n}D` : ''],
@@ -251,7 +250,7 @@ function teamCard(r) {
   card.innerHTML = `
     <div class="tc-head">
       ${flagImg(r.team, 'tc-flag')}
-      <span class="tc-name">${escapeHtml(r.team)}${stageTag(r.stage)}</span>
+      <span class="tc-name">${escapeHtml(r.team)}${elimMark(r.team)}${stageTag(r.stage)}</span>
       ${r.group ? `<span class="tc-grp">Grp ${escapeHtml(r.group)}</span>` : ''}
       <span class="tc-tier tier-${r.tier}">T${r.tier ?? '?'}</span>
       <span class="tc-total">${fmt(r.total)}</span>
@@ -297,6 +296,9 @@ async function triggerSync() {
     if (j && j.updated) load(); // new results -> refresh
   } catch {}
 }
+
+function isEliminated(team) { return elimSet.has(canonicalTeam(team)); }
+function elimMark(team) { return isEliminated(team) ? ' <span class="elim" title="Eliminated">✕</span>' : ''; }
 
 function flagImg(team, cls) {
   const url = flagUrl(team, 40);

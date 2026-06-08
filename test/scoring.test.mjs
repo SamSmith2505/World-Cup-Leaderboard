@@ -1,6 +1,6 @@
 // Run: node test/scoring.test.mjs
 import assert from 'node:assert/strict';
-import { compute, computeTeamPoints } from '../lib/scoring.js';
+import { compute, computeTeamPoints, eliminatedSet } from '../lib/scoring.js';
 import { cumulativeBonus, tierOf } from '../lib/config.js';
 
 let pass = 0;
@@ -115,6 +115,23 @@ ok('manual entry overrides API entry for the same fixture', () => {
   assert.equal(t['Ghana'].raw, 6);
   assert.equal(t['Ghana'].games, 1); // not double-counted
   assert.equal(t['Iran'].raw, 0);
+});
+
+ok('elimination: knockout losers out, group losers not, manual flag honored', () => {
+  const s = {
+    matches: [
+      { round: 'group', teamA: 'Brazil', teamB: 'Haiti', scoreA: 4, scoreB: 0, final: true },     // group loss != out
+      { round: 'r32', teamA: 'France', teamB: 'Spain', scoreA: 2, scoreB: 1, final: true },        // Spain out
+      { round: 'qf', teamA: 'Germany', teamB: 'Brazil', scoreA: 0, scoreB: 0, winner: 'B', final: true }, // Germany out (pens)
+    ],
+    eliminated: { Haiti: true }, // manual
+  };
+  const e = eliminatedSet(s);
+  assert.ok(e.has('Spain'));
+  assert.ok(e.has('Germany'));
+  assert.ok(e.has('Haiti'));      // manual
+  assert.ok(!e.has('France'));    // won
+  assert.ok(!e.has('Brazil'));    // group loss isn't elimination; won its QF
 });
 
 console.log(`\n${pass} tests passed ✓`);
