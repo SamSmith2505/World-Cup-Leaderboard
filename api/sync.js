@@ -40,7 +40,10 @@ export default async function handler(req, res) {
 
   const key = apiKey();
   if (!key) {
-    return res.status(200).json({ ok: false, configured: false, message: 'No API key set (APISPORTS_KEY). Manual entry still works.' });
+    // TEMP diagnostic: report env-var NAMES (never values) that look key-ish, so
+    // we can spot a misnamed/mis-scoped var. Remove after setup is confirmed.
+    const envHints = Object.keys(process.env).filter((k) => /API|KEY|FOOTBALL|SPORT|RAPID/i.test(k));
+    return res.status(200).json({ ok: false, configured: false, message: 'No API key set (APISPORTS_KEY). Manual entry still works.', envHints });
   }
 
   const state = await getState();
