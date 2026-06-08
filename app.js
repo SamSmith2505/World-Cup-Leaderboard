@@ -16,13 +16,14 @@ let elimSet = new Set(); // eliminated teams (canonical names)
 let nextByTeam = {};     // canonical team -> next scheduled fixture
 
 // ---- tab switching ---------------------------------------------------------
+const VIEWS = { board: 'view-board', teams: 'view-teams', own: 'view-own' };
 document.querySelectorAll('.tab').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b === btn));
     const tab = btn.dataset.tab;
-    document.getElementById('view-board').classList.toggle('hidden', tab !== 'board');
-    document.getElementById('view-teams').classList.toggle('hidden', tab !== 'teams');
+    for (const [t, id] of Object.entries(VIEWS)) document.getElementById(id).classList.toggle('hidden', t !== tab);
     if (tab === 'teams' && lastData) renderTeams();
+    if (tab === 'own' && lastData) renderOwnership();
   });
 });
 document.getElementById('teamSort').addEventListener('change', renderTeams);
@@ -47,6 +48,7 @@ async function load() {
     renderDiffs(lastData.roster);
     renderMeta(lastUpdated, lastData.roster.length, lastData.rosterSource);
     if (!document.getElementById('view-teams').classList.contains('hidden')) renderTeams();
+    if (!document.getElementById('view-own').classList.contains('hidden')) renderOwnership();
   } catch (e) {
     boardEl.innerHTML = `<div class="loading">Couldn't load data. ${escapeHtml(String(e))}</div>`;
   }
@@ -277,6 +279,42 @@ function teamCard(r) {
       <span>= <b>${fmt(r.total)}</b></span>
     </div>`;
   return card;
+}
+
+// ---- team ownership matrix -------------------------------------------------
+function renderOwnership() {
+  if (!lastData) return;
+  const el = document.getElementById('ownTable');
+  const players = lastData.roster.map((p) => p.name);
+  if (!players.length) { el.innerHTML = '<tbody><tr><td class="own-team">No players yet.</td></tr></tbody>'; return; }
+
+  // player -> Set(canonical teams owned)
+  const ownsSet = {};
+  for (const p of lastData.roster) {
+    const s = new Set();
+    for (const t of p.picks || []) s.add(canonicalTeam(t));
+    ownsSet[p.name] = s;
+  }
+  const owners = ownersByTeam();
+  const teams = [...ALL_TEAMS].sort((a, b) => (tierOf(a) ?? 9) - (tierOf(b) ?? 9) || a.localeCompare(b));
+
+  let html = '<thead><tr><th class="own-team-h">Team</th>';
+  for (const pl of players) html += `<th class="own-pl"><span>${escapeHtml(pl)}</span></th>`;
+  html += '<th class="own-cnt-h">#</th></tr></thead><tbody>';
+
+  for (const team of teams) {
+    const elim = isEliminated(team);
+    html += `<tr class="${elim ? 'own-elim' : ''}">`;
+    html += `<td class="own-team"><span class="own-dot tier-${tierOf(team)}"></span>${flagImg(team, 'bd-flag')}<span class="own-tname">${escapeHtml(short(team))}${elimMark(team)}</span></td>`;
+    for (const pl of players) {
+      const owns = ownsSet[pl].has(canonicalTeam(team));
+      html += `<td class="own-cell${owns ? ' yes' : ''}">${owns ? '✓' : ''}</td>`;
+    }
+    html += `<td class="own-cnt">${(owners[team] || []).length}</td>`;
+    html += '</tr>';
+  }
+  html += '</tbody>';
+  el.innerHTML = html;
 }
 
 // ---- movers ----------------------------------------------------------------

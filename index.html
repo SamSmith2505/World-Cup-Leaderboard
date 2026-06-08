@@ -20,6 +20,7 @@
       <nav class="tabs" role="tablist">
         <button class="tab active" data-tab="board" role="tab">Leaderboard</button>
         <button class="tab" data-tab="teams" role="tab">Points by Team</button>
+        <button class="tab" data-tab="own" role="tab">Ownership</button>
       </nav>
     </div>
   </header>
@@ -42,8 +43,8 @@
 
       <p class="autonote">🟢 Scores auto-update about every 20 minutes</p>
       <p class="foot">
-        Tap a row to see each team's contribution &amp; max possible score. Tiers &amp;
-        multipliers are fixed; results are entered/confirmed by the admin.
+        Tap a row to see each team's contribution. Tiers &amp; multipliers are fixed;
+        results are entered/confirmed by the admin.
       </p>
     </section>
 
@@ -63,6 +64,13 @@
         <div class="loading">Loading…</div>
       </section>
       <p class="foot">Each team's points before the tier multiplier, broken out by source.</p>
+    </section>
+
+    <section id="view-own" class="hidden">
+      <p class="own-note muted">✓ = owns the team. Scroll sideways to see everyone. The <b>#</b> column is how many players own each team.</p>
+      <div class="own-scroll">
+        <table id="ownTable" class="own"></table>
+      </div>
     </section>
   </main>
 
