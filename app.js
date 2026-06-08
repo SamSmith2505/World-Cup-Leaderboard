@@ -1,6 +1,6 @@
 // Public page — leaderboard + points-by-team, with throttled auto-sync.
 import { compute, computeMovers, computeTeamPoints } from '/lib/scoring.js';
-import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf } from '/lib/config.js';
+import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS } from '/lib/config.js';
 
 const boardEl = document.getElementById('board');
 const teamsEl = document.getElementById('teams');
@@ -126,10 +126,8 @@ function renderTeams() {
   const teamPoints = computeTeamPoints(lastData.state);
   const owners = ownersByTeam();
 
-  // Union of teams that scored + teams someone picked (populated pre-tournament).
-  const picked = new Set();
-  for (const p of lastData.roster) for (const t of p.picks || []) picked.add(canonicalTeam(t));
-  const names = new Set([...Object.keys(teamPoints), ...picked]);
+  // All 48 teams (plus any scored team not in the table, just in case).
+  const names = new Set([...ALL_TEAMS, ...Object.keys(teamPoints)]);
 
   let rows = [...names].map((name) => {
     const r = teamPoints[name] || emptyTeam(name);
