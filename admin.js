@@ -10,9 +10,14 @@ const tokenEl = $('token');
 tokenEl.value = localStorage.getItem('wc-admin-token') || '';
 tokenEl.addEventListener('change', () => localStorage.setItem('wc-admin-token', tokenEl.value));
 
-// Populate round + team pickers.
+// Populate round + team + group pickers.
+const GROUP_LETTERS = 'ABCDEFGHIJKL'.split('');
 $('nRound').innerHTML = ROUNDS.map((r) => `<option value="${r.key}">${r.label}</option>`).join('');
 $('teams').innerHTML = ALL_TEAMS.slice().sort().map((t) => `<option value="${t}">`).join('');
+$('nGroup').innerHTML = '<option value="">Grp</option>' + GROUP_LETTERS.map((g) => `<option value="${g}">${g}</option>`).join('');
+function groupOpts(sel) {
+  return '<option value="">Grp</option>' + GROUP_LETTERS.map((g) => `<option value="${g}" ${g === sel ? 'selected' : ''}>${g}</option>`).join('');
+}
 
 async function load() {
   const [s, r] = await Promise.all([
@@ -47,6 +52,7 @@ function renderMatches() {
     const roundOpts = ROUNDS.map((r) => `<option value="${r.key}" ${r.key === m.round ? 'selected' : ''}>${r.label}</option>`).join('');
     row.innerHTML = `
       <select class="grow" data-i="${i}" data-f="round">${roundOpts}</select>
+      ${m.round === 'group' ? `<select data-i="${i}" data-f="group">${groupOpts(m.group)}</select>` : ''}
       <input class="grow" list="teams" data-i="${i}" data-f="teamA" value="${attr(m.teamA)}" />
       <input type="number" min="0" data-i="${i}" data-f="scoreA" value="${Number(m.scoreA) || 0}" />
       <span>–</span>
@@ -93,8 +99,10 @@ $('addMatch').addEventListener('click', () => {
   const a = canonicalTeam($('nA').value);
   const b = canonicalTeam($('nB').value);
   if (!a || !b) return toast('Enter both teams');
+  const round = $('nRound').value;
   state.matches.push({
-    round: $('nRound').value, teamA: a, teamB: b,
+    round, group: round === 'group' ? ($('nGroup').value || null) : null,
+    teamA: a, teamB: b,
     scoreA: Number($('nSA').value) || 0, scoreB: Number($('nSB').value) || 0,
     final: true, manual: true, source: 'manual',
   });

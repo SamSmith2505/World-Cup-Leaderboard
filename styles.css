@@ -91,8 +91,9 @@ main { padding-top: 14px; }
 .teams-controls .check { display: inline-flex; align-items: center; gap: 6px; }
 .teams { display: flex; flex-direction: column; gap: 10px; }
 .team-card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
-.tc-head { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; }
-.tc-name { font-weight: 600; font-size: 16px; }
+.tc-head { display: flex; align-items: center; gap: 8px; }
+.tc-name { font-weight: 600; font-size: 16px; flex: 1; min-width: 0; }
+.tc-grp { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: var(--card2); color: var(--muted); }
 .tc-tier { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 8px; background: var(--card2); }
 .tier-1 { background: #cfe8d2; color: #173b22; }
 .tier-2 { background: #f3dcc0; color: #4a2f12; }
@@ -101,6 +102,8 @@ main { padding-top: 14px; }
 .tier-5 { background: #f3ecc0; color: #4a4312; }
 .tier-6 { background: #d8cfe8; color: #2f1850; }
 .tc-total { font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+.tc-owners { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.tc-owners b { color: var(--text); }
 .tc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin: 10px 0 8px; }
 .tc-item { display: flex; justify-content: space-between; font-size: 13px; border-bottom: 1px dotted var(--line); padding-bottom: 3px; }
 .tc-item.zero { opacity: .4; }

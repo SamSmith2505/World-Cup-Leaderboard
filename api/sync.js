@@ -11,7 +11,7 @@
 // ============================================================================
 
 import { getState, setState } from '../lib/store.js';
-import { canonicalTeam, tierOf, roundFromApi, ROUND_INDEX, FINAL_STATUSES } from '../lib/config.js';
+import { canonicalTeam, tierOf, roundFromApi, groupFromApi, ROUND_INDEX, FINAL_STATUSES } from '../lib/config.js';
 import { fixtureKey } from '../lib/scoring.js';
 
 const THROTTLE_MS = 20 * 60 * 1000; // 20 min -> <= ~72 calls/day worst case
@@ -59,6 +59,7 @@ export default async function handler(req, res) {
     const status = fx?.fixture?.status?.short;
     if (!FINAL_STATUSES.has(status)) continue; // only completed matches
     const round = roundFromApi(fx?.league?.round);
+    const group = groupFromApi(fx?.league?.round);
     const teamA = canonicalTeam(fx?.teams?.home?.name);
     const teamB = canonicalTeam(fx?.teams?.away?.name);
     const scoreA = Number(fx?.goals?.home) || 0;
@@ -77,7 +78,7 @@ export default async function handler(req, res) {
       id: 'api:' + fx?.fixture?.id,
       source: 'api',
       manual: false,
-      round, teamA, teamB, scoreA, scoreB,
+      round, group, teamA, teamB, scoreA, scoreB,
       winner,
       final: true,
       status,

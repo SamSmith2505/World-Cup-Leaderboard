@@ -42,9 +42,11 @@
         <select id="teamSort">
           <option value="total">Total points</option>
           <option value="tier">Tier</option>
+          <option value="group">Group</option>
           <option value="name">Name</option>
         </select>
-        <label class="muted check"><input type="checkbox" id="onlyScored" checked /> only teams with points</label>
+        <select id="groupFilter" title="Filter by group"><option value="">All groups</option></select>
+        <label class="muted check"><input type="checkbox" id="onlyScored" checked /> only with points</label>
       </div>
       <section id="teams" class="teams" aria-live="polite">
         <div class="loading">Loading…</div>

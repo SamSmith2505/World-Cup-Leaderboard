@@ -1,6 +1,6 @@
 // Public page — leaderboard + points-by-team, with throttled auto-sync.
 import { compute, computeMovers, computeTeamPoints } from '/lib/scoring.js';
-import { TIER_MULTIPLIERS, tierOf, canonicalTeam } from '/lib/config.js';
+import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf } from '/lib/config.js';
 
 const boardEl = document.getElementById('board');
 const teamsEl = document.getElementById('teams');
@@ -23,6 +23,7 @@ document.querySelectorAll('.tab').forEach((btn) => {
 });
 document.getElementById('teamSort').addEventListener('change', renderTeams);
 document.getElementById('onlyScored').addEventListener('change', renderTeams);
+document.getElementById('groupFilter').addEventListener('change', renderTeams);
 
 // ---- data load -------------------------------------------------------------
 async function load() {
@@ -106,22 +107,47 @@ function stageTag(stage) {
 }
 
 // ---- points by team --------------------------------------------------------
+function ownersByTeam() {
+  const map = {};
+  for (const p of lastData.roster) {
+    const seen = new Set();
+    for (const t of p.picks || []) {
+      const canon = canonicalTeam(t);
+      if (seen.has(canon)) continue;
+      seen.add(canon);
+      (map[canon] ||= []).push(p.name);
+    }
+  }
+  return map;
+}
+
 function renderTeams() {
   if (!lastData) return;
   const teamPoints = computeTeamPoints(lastData.state);
+  const owners = ownersByTeam();
 
-  // Union of teams that scored + teams someone picked (so it's populated pre-tournament).
+  // Union of teams that scored + teams someone picked (populated pre-tournament).
   const picked = new Set();
   for (const p of lastData.roster) for (const t of p.picks || []) picked.add(canonicalTeam(t));
   const names = new Set([...Object.keys(teamPoints), ...picked]);
 
-  let rows = [...names].map((name) => teamPoints[name] || emptyTeam(name));
-  const onlyScored = document.getElementById('onlyScored').checked;
-  if (onlyScored) rows = rows.filter((r) => r.total > 0);
+  let rows = [...names].map((name) => {
+    const r = teamPoints[name] || emptyTeam(name);
+    r.owners = owners[r.team] || [];
+    return r;
+  });
+
+  // Populate the group filter from groups we actually know about.
+  refreshGroupFilter(rows);
+
+  if (document.getElementById('onlyScored').checked) rows = rows.filter((r) => r.total > 0);
+  const gf = document.getElementById('groupFilter').value;
+  if (gf) rows = rows.filter((r) => r.group === gf);
 
   const sort = document.getElementById('teamSort').value;
   rows.sort((a, b) => {
     if (sort === 'tier') return (a.tier ?? 9) - (b.tier ?? 9) || b.total - a.total || a.team.localeCompare(b.team);
+    if (sort === 'group') return (a.group || 'Z').localeCompare(b.group || 'Z') || b.total - a.total || a.team.localeCompare(b.team);
     if (sort === 'name') return a.team.localeCompare(b.team);
     return b.total - a.total || (a.tier ?? 9) - (b.tier ?? 9) || a.team.localeCompare(b.team);
   });
@@ -131,9 +157,21 @@ function renderTeams() {
   for (const r of rows) teamsEl.appendChild(teamCard(r));
 }
 
+function refreshGroupFilter(rows) {
+  const sel = document.getElementById('groupFilter');
+  const groups = [...new Set(rows.map((r) => r.group).filter(Boolean))].sort();
+  const cur = sel.value;
+  const wanted = '<option value="">All groups</option>' + groups.map((g) => `<option value="${g}">Group ${g}</option>`).join('');
+  if (sel.dataset.groups !== groups.join('')) {
+    sel.innerHTML = wanted;
+    sel.dataset.groups = groups.join('');
+    if (groups.includes(cur)) sel.value = cur;
+  }
+}
+
 function emptyTeam(name) {
   return {
-    team: name, tier: tierOf(name), multiplier: TIER_MULTIPLIERS[tierOf(name)] ?? 1,
+    team: name, tier: tierOf(name), group: groupOf(name), multiplier: TIER_MULTIPLIERS[tierOf(name)] ?? 1,
     matchPts: 0, goals: 0, advBonus: 0, raw: 0, total: 0,
     src: { groupWin: { pts: 0, n: 0 }, groupDraw: { pts: 0, n: 0 }, groupGoals: { pts: 0, n: 0 }, koWin: { pts: 0, n: 0 }, koGoals: { pts: 0, n: 0 }, adv: { pts: 0 } },
   };
@@ -152,12 +190,18 @@ function teamCard(r) {
     ['Advancement', s.adv.pts, ''],
   ];
   const mult = TIER_MULTIPLIERS[r.tier] ?? r.multiplier ?? 1;
+  const owners = r.owners || [];
+  const ownersHtml = owners.length
+    ? `Picked by <b>${owners.length}</b>: ${owners.map(escapeHtml).join(', ')}`
+    : `Picked by <b>0</b>`;
   card.innerHTML = `
     <div class="tc-head">
       <span class="tc-name">${escapeHtml(r.team)}${stageTag(r.stage)}</span>
+      ${r.group ? `<span class="tc-grp">Grp ${escapeHtml(r.group)}</span>` : ''}
       <span class="tc-tier tier-${r.tier}">T${r.tier ?? '?'}</span>
       <span class="tc-total">${fmt(r.total)}</span>
     </div>
+    <div class="tc-owners">${ownersHtml}</div>
     <div class="tc-grid">
       ${items.map(([label, pts, note]) => `
         <div class="tc-item${pts ? '' : ' zero'}">
