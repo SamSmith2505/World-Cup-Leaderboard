@@ -62,35 +62,39 @@ export default async function handler(req, res) {
   }
 
   const apiMatches = [];
+  const upcoming = [];
   const unmatched = new Set();
   for (const fx of fixtures) {
     const status = fx?.fixture?.status?.short;
-    if (!FINAL_STATUSES.has(status)) continue; // only completed matches
     const round = roundFromApi(fx?.league?.round);
     const group = groupFromApi(fx?.league?.round);
     const teamA = canonicalTeam(fx?.teams?.home?.name);
     const teamB = canonicalTeam(fx?.teams?.away?.name);
-    const scoreA = Number(fx?.goals?.home) || 0;
-    const scoreB = Number(fx?.goals?.away) || 0;
 
-    if (tierOf(teamA) == null) unmatched.add(fx?.teams?.home?.name);
-    if (tierOf(teamB) == null) unmatched.add(fx?.teams?.away?.name);
+    if (tierOf(teamA) == null && fx?.teams?.home?.name) unmatched.add(fx.teams.home.name);
+    if (tierOf(teamB) == null && fx?.teams?.away?.name) unmatched.add(fx.teams.away.name);
 
-    let winner = null;
-    if (scoreA === scoreB && ROUND_INDEX[round]?.knockout) {
-      if (fx?.teams?.home?.winner === true) winner = 'A';
-      else if (fx?.teams?.away?.winner === true) winner = 'B';
+    if (FINAL_STATUSES.has(status)) {
+      const scoreA = Number(fx?.goals?.home) || 0;
+      const scoreB = Number(fx?.goals?.away) || 0;
+      let winner = null;
+      if (scoreA === scoreB && ROUND_INDEX[round]?.knockout) {
+        if (fx?.teams?.home?.winner === true) winner = 'A';
+        else if (fx?.teams?.away?.winner === true) winner = 'B';
+      }
+      apiMatches.push({
+        id: 'api:' + fx?.fixture?.id,
+        source: 'api', manual: false,
+        round, group, teamA, teamB, scoreA, scoreB, winner,
+        final: true, status,
+      });
+    } else {
+      // Scheduled / not-yet-final fixture -> kept for "next match".
+      upcoming.push({
+        id: 'api:' + fx?.fixture?.id,
+        date: fx?.fixture?.date, round, group, teamA, teamB, status,
+      });
     }
-
-    apiMatches.push({
-      id: 'api:' + fx?.fixture?.id,
-      source: 'api',
-      manual: false,
-      round, group, teamA, teamB, scoreA, scoreB,
-      winner,
-      final: true,
-      status,
-    });
   }
 
   // Merge: keep manual entries; add API matches that aren't manually overridden.
@@ -100,6 +104,7 @@ export default async function handler(req, res) {
 
   const now = new Date().toISOString();
   state.matches = [...manual, ...freshApi];
+  state.fixtures = upcoming; // refreshed wholesale each sync
   state.meta.lastSyncAt = now;
   state.meta.lastUpdated = now;
   await setState(state);
@@ -107,6 +112,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     ok: true,
     updated: freshApi.length,
+    upcoming: upcoming.length,
     manualKept: manual.length,
     totalFixturesSeen: fixtures.length,
     unmatchedTeams: [...unmatched],

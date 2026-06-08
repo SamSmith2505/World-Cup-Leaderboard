@@ -13,6 +13,7 @@ const diffsBody = document.getElementById('diffsBody');
 const expanded = new Set();
 let lastData = null; // { state, snapshot, roster }
 let elimSet = new Set(); // eliminated teams (canonical names)
+let nextByTeam = {};     // canonical team -> next scheduled fixture
 
 // ---- tab switching ---------------------------------------------------------
 document.querySelectorAll('.tab').forEach((btn) => {
@@ -38,6 +39,7 @@ async function load() {
     const state = stateRes.state || { matches: [], advancement: {}, meta: {} };
     lastData = { state, snapshot: stateRes.snapshot || null, roster: rosterRes.roster || [], rosterSource: rosterRes.source };
     elimSet = eliminatedSet(state);
+    nextByTeam = computeNextMatches(state.fixtures);
 
     const { standings, lastUpdated } = compute(state, lastData.roster);
     render(standings);
@@ -247,6 +249,10 @@ function teamCard(r) {
   const ownersHtml = owners.length
     ? `Picked by <b>${owners.length}</b>: ${owners.map(escapeHtml).join(', ')}`
     : `Picked by <b>0</b>`;
+  const nx = nextByTeam[canonicalTeam(r.team)];
+  const nextHtml = (!isEliminated(r.team) && nx)
+    ? `<div class="tc-next">⏱ <span class="tc-next-lbl">Next</span> ${flagImg(nx.opponent, 'rsub-flag')}${escapeHtml(short(nx.opponent))} · ${escapeHtml(fmtKickoff(nx.date))}</div>`
+    : '';
   card.innerHTML = `
     <div class="tc-head">
       ${flagImg(r.team, 'tc-flag')}
@@ -256,6 +262,7 @@ function teamCard(r) {
       <span class="tc-total">${fmt(r.total)}</span>
     </div>
     <div class="tc-owners">${ownersHtml}</div>
+    ${nextHtml}
     <div class="tc-grid">
       ${items.map(([label, pts, note]) => `
         <div class="tc-item${pts ? '' : ' zero'}">
@@ -295,6 +302,25 @@ async function triggerSync() {
     const j = await fetch('/api/sync').then((r) => r.json());
     if (j && j.updated) load(); // new results -> refresh
   } catch {}
+}
+
+function computeNextMatches(fixtures) {
+  const now = Date.now();
+  const map = {};
+  for (const f of fixtures || []) {
+    const t = Date.parse(f.date);
+    if (!t || t < now) continue; // only future kickoffs
+    const A = canonicalTeam(f.teamA), B = canonicalTeam(f.teamB);
+    if (!map[A] || t < map[A]._t) map[A] = { _t: t, date: f.date, opponent: B, round: f.round, group: f.group };
+    if (!map[B] || t < map[B]._t) map[B] = { _t: t, date: f.date, opponent: A, round: f.round, group: f.group };
+  }
+  return map;
+}
+
+function fmtKickoff(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }
 
 function isEliminated(team) { return elimSet.has(canonicalTeam(team)); }
