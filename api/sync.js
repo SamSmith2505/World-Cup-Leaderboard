@@ -47,6 +47,27 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: false, configured: false, message: 'No API key set (APISPORTS_KEY). Manual entry still works.', envHints });
   }
 
+  // TEMP diagnostic: ?diag=1 reports the account's plan + which World Cup
+  // leagues/seasons the key can actually access. Remove after setup.
+  if ((req.query?.diag ?? '') === '1') {
+    try {
+      const h = { 'x-apisports-key': key };
+      const [statusRes, leaguesRes] = await Promise.all([
+        fetch(`${API_BASE}/status`, { headers: h }).then((r) => r.json()),
+        fetch(`${API_BASE}/leagues?search=world cup`, { headers: h }).then((r) => r.json()),
+      ]);
+      const worldCups = (leaguesRes?.response || []).map((l) => ({
+        id: l?.league?.id,
+        name: l?.league?.name,
+        type: l?.league?.type,
+        seasons: (l?.seasons || []).map((s) => s.year),
+      }));
+      return res.status(200).json({ diag: true, status: statusRes?.response, worldCups });
+    } catch (e) {
+      return res.status(200).json({ diag: true, error: String(e) });
+    }
+  }
+
   const state = await getState();
   state.meta = state.meta || {};
   const last = state.meta.lastSyncAt ? Date.parse(state.meta.lastSyncAt) : 0;
