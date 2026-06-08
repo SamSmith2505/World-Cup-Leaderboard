@@ -222,10 +222,10 @@ table.own th, table.own td { border-bottom: 1px solid var(--line); border-right:
 table.own thead th { position: sticky; top: 0; background: var(--card2); z-index: 2; }
 .own-team, .own-team-h { position: sticky; left: 0; background: var(--card); }
 .own-team-h { z-index: 4; background: var(--card2); text-align: left; padding: 8px 10px; font-family: var(--font-display); }
-.own-team { z-index: 3; padding: 7px 10px; min-width: 132px; }
+.own-team { z-index: 3; padding: 7px 10px; min-width: 158px; }
 .own-team .bd-flag { margin: 0 6px 0 0; }
-.own-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
 .own-tname { font-weight: 600; }
+.own-tier { display: inline-block; margin-left: 7px; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 5px; vertical-align: 1px; }
 .own-pl { padding: 8px 2px; height: 100px; min-width: 30px; color: var(--muted); font-weight: 600; text-align: center; vertical-align: bottom; }
 .own-pl span { writing-mode: vertical-rl; transform: rotate(180deg); display: inline-block; max-height: 92px; overflow: hidden; text-overflow: ellipsis; }
 .own-cell { width: 34px; text-align: center; color: var(--green); font-weight: 800; font-size: 14px; }

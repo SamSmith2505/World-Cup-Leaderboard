@@ -305,7 +305,7 @@ function renderOwnership() {
   for (const team of teams) {
     const elim = isEliminated(team);
     html += `<tr class="${elim ? 'own-elim' : ''}">`;
-    html += `<td class="own-team"><span class="own-dot tier-${tierOf(team)}"></span>${flagImg(team, 'bd-flag')}<span class="own-tname">${escapeHtml(short(team))}${elimMark(team)}</span></td>`;
+    html += `<td class="own-team">${flagImg(team, 'bd-flag')}<span class="own-tname">${escapeHtml(short(team))}${elimMark(team)}</span><span class="own-tier tier-${tierOf(team)}">T${tierOf(team) ?? '?'}</span></td>`;
     for (const pl of players) {
       const owns = ownsSet[pl].has(canonicalTeam(team));
       html += `<td class="own-cell${owns ? ' yes' : ''}">${owns ? '✓' : ''}</td>`;
