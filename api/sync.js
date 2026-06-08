@@ -10,9 +10,10 @@
 //   many people open the page at once.
 // ============================================================================
 
-import { getState, setState } from '../lib/store.js';
-import { canonicalTeam, tierOf, roundFromApi, groupFromApi, ROUND_INDEX, FINAL_STATUSES } from '../lib/config.js';
-import { fixtureKey } from '../lib/scoring.js';
+import { getState, setState, getSnapshot, setSnapshot } from '../lib/store.js';
+import { canonicalTeam, tierOf, roundFromApi, groupFromApi, ROUND_INDEX, FINAL_STATUSES, ROSTER_CSV_URL } from '../lib/config.js';
+import { fixtureKey, compute } from '../lib/scoring.js';
+import { rosterFromCSV, ROSTER_FALLBACK } from '../lib/roster.js';
 
 // Throttle for NON-forced calls (page visits). The cron uses force=1 and
 // bypasses this; keeping it ~= the cron interval means viewer-triggered syncs
@@ -30,6 +31,31 @@ function apiKey() {
 }
 function isManual(m) {
   return m?.source === 'manual' || m?.manual === true;
+}
+
+function sameUTCDay(a, b) {
+  const x = new Date(a), y = new Date(b);
+  return x.getUTCFullYear() === y.getUTCFullYear() && x.getUTCMonth() === y.getUTCMonth() && x.getUTCDate() === y.getUTCDate();
+}
+
+async function rosterForSnapshot() {
+  try {
+    const r = await fetch(ROSTER_CSV_URL);
+    if (r.ok) { const rr = rosterFromCSV(await r.text()); if (rr.length) return rr; }
+  } catch {}
+  return ROSTER_FALLBACK;
+}
+
+// Save a once-per-(UTC)-day standings baseline so the leaderboard can show
+// "gained today" and rank movement without anyone clicking anything.
+async function rollDailySnapshot(state, now) {
+  try {
+    const snap = await getSnapshot();
+    if (snap && snap.at && sameUTCDay(snap.at, now)) return; // already have today's baseline
+    const roster = await rosterForSnapshot();
+    const { standings } = compute(state, roster);
+    await setSnapshot({ standings: standings.map((s) => ({ name: s.name, total: s.total, rank: s.rank })), at: now });
+  } catch {}
 }
 
 export default async function handler(req, res) {
@@ -112,6 +138,7 @@ export default async function handler(req, res) {
   state.meta.lastSyncAt = now;
   state.meta.lastUpdated = now;
   await setState(state);
+  await rollDailySnapshot(state, now);
 
   return res.status(200).json({
     ok: true,

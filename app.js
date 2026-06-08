@@ -1,12 +1,10 @@
 // Public page — leaderboard + points-by-team, with throttled auto-sync.
-import { compute, computeMovers, computeTeamPoints, eliminatedSet } from '/lib/scoring.js';
+import { compute, computeTeamPoints, eliminatedSet } from '/lib/scoring.js';
 import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl } from '/lib/config.js';
 
 const boardEl = document.getElementById('board');
 const teamsEl = document.getElementById('teams');
 const metaEl = document.getElementById('meta');
-const moversEl = document.getElementById('movers');
-const moversList = document.getElementById('moversList');
 const liveEl = document.getElementById('live');
 const liveList = document.getElementById('liveList');
 const todayEl = document.getElementById('today');
@@ -49,7 +47,6 @@ async function load() {
 
     const { standings, lastUpdated } = compute(state, lastData.roster);
     render(standings);
-    renderMovers(standings, lastData.snapshot);
     renderLive(state);
     renderToday(state);
     renderMeta(lastUpdated, lastData.roster.length, lastData.rosterSource);
@@ -79,17 +76,13 @@ function rowEl(row) {
   const head = document.createElement('button');
   head.className = 'row-head';
 
-  // Best & worst contributing team (only meaningful once someone has points).
-  const scored = row.breakdown.filter((t) => t.total > 0);
+  // Points gained today (vs the daily baseline snapshot).
+  const gain = gainedToday(row.name, row.total);
   let sub = '';
-  if (scored.length) {
-    const byPts = [...row.breakdown].sort((a, b) => b.total - a.total);
-    const best = byPts[0];
-    const worst = byPts[byPts.length - 1];
-    sub = `<div class="rsub">
-      <span class="bw up">▲ ${flagImg(best.team, 'rsub-flag')}${escapeHtml(short(best.team))} ${fmt(best.total)}</span>
-      <span class="bw down">▼ ${flagImg(worst.team, 'rsub-flag')}${escapeHtml(short(worst.team))} ${fmt(worst.total)}</span>
-    </div>`;
+  if (gain !== null) {
+    const cls = gain > 0 ? 'pos' : gain < 0 ? 'neg' : 'zero';
+    const arrow = gain > 0 ? '▲ ' : gain < 0 ? '▼ ' : '';
+    sub = `<div class="rsub"><span class="today-gain ${cls}">${arrow}${gain > 0 ? '+' : ''}${fmt(gain)} today</span></div>`;
   }
 
   head.innerHTML = `
@@ -109,6 +102,15 @@ function rowEl(row) {
   body.appendChild(breakdownTable(row.breakdown));
   wrap.appendChild(head); wrap.appendChild(body);
   return wrap;
+}
+
+function gainedToday(name, currentTotal) {
+  const snap = lastData?.snapshot;
+  if (!snap || !snap.at) return null;
+  if (Date.now() - Date.parse(snap.at) > 30 * 3600 * 1000) return null; // baseline too old
+  const prev = snap.standings?.find((s) => s.name === name);
+  if (!prev) return null;
+  return Math.round((currentTotal - prev.total) * 10) / 10;
 }
 
 function short(name) {
@@ -360,24 +362,6 @@ function renderToday(state) {
     const time = new Date(x.date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     return matchCard(x, { mid: `<span class="ms-time">${time}</span>`, tag: '' });
   }).join('');
-}
-
-// ---- movers ----------------------------------------------------------------
-function renderMovers(standings, snapshot) {
-  const movers = computeMovers(standings, snapshot?.standings || null).slice(0, 3);
-  if (!movers.length) { moversEl.classList.add('hidden'); return; }
-  moversEl.classList.remove('hidden');
-  moversList.innerHTML = '';
-  for (const m of movers) {
-    const dir = m.rankDelta > 0 ? 'up' : m.rankDelta < 0 ? 'down' : 'flat';
-    const arrow = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '—';
-    const el = document.createElement('div');
-    el.className = `mover ${dir}`;
-    el.innerHTML = `<span class="m-arrow">${arrow}</span>
-      <span class="m-name">${escapeHtml(m.name)}</span>
-      <span class="m-pts">+${fmt(Math.abs(m.pointsDelta))} pts${m.rankDelta ? ` · ${Math.abs(m.rankDelta)} spot${Math.abs(m.rankDelta) > 1 ? 's' : ''}` : ''}</span>`;
-    moversList.appendChild(el);
-  }
 }
 
 // ---- auto-sync (throttled server-side) -------------------------------------

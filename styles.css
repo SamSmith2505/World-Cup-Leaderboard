@@ -75,9 +75,10 @@ main { padding-top: 14px; }
 /* Best/worst sub-line + max points */
 .rcol { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .rsub { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--muted); }
-.bw { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
-.bw.up { color: #8fe3b1; }
-.bw.down { color: #9b9c8b; }
+.today-gain { font-weight: 700; white-space: nowrap; }
+.today-gain.pos { color: var(--green); }
+.today-gain.neg { color: var(--down); }
+.today-gain.zero { color: var(--muted); font-weight: 600; }
 .rsub-flag { width: 16px; height: 11px; display: inline-block; vertical-align: -1px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.14); margin: 0 1px; }
 /* Eliminated marker */
 .elim {
