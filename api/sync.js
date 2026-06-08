@@ -14,10 +14,10 @@ import { getState, setState } from '../lib/store.js';
 import { canonicalTeam, tierOf, roundFromApi, groupFromApi, ROUND_INDEX, FINAL_STATUSES } from '../lib/config.js';
 import { fixtureKey } from '../lib/scoring.js';
 
-// Throttle for NON-forced calls (page visits). The 15-min cron uses force=1 and
+// Throttle for NON-forced calls (page visits). The cron uses force=1 and
 // bypasses this; keeping it ~= the cron interval means viewer-triggered syncs
 // don't add API calls on top of the cron.
-const THROTTLE_MS = 15 * 60 * 1000;
+const THROTTLE_MS = 20 * 60 * 1000;
 const API_BASE = process.env.API_FOOTBALL_BASE || 'https://v3.football.api-sports.io';
 const LEAGUE_ID = process.env.WC_LEAGUE_ID || '1'; // API-Football: World Cup = 1
 const SEASON = process.env.WC_SEASON || '2026';

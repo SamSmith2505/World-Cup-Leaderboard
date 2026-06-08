@@ -4,17 +4,17 @@ name: Sync scores
 # needing a paid Vercel cron.
 #
 # RATE LIMIT: API-Football free tier = 100 requests/day.
-#   */15 = ~96 calls/day (tight — little headroom for manual "Sync now" clicks)
-#   */20 = ~72 calls/day (recommended for comfortable margin)
-# Change the cron below to '*/20 * * * *' if you want more headroom.
+#   */20 = ~72 calls/day (current — comfortable margin)
+#   */15 = ~96 calls/day (tighter; little headroom for manual "Sync now" clicks)
+# Adjust the cron below to taste.
 #
 # NOTE: GitHub's scheduled runs are best-effort and can be delayed under load.
-# If you need rock-solid 15-min timing, use https://cron-job.org instead
+# If you need rock-solid timing, use https://cron-job.org instead
 # (point it at the same URL).
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/20 * * * *'
   workflow_dispatch: {}
 
 jobs:
