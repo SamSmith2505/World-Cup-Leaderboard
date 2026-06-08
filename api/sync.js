@@ -40,37 +40,7 @@ export default async function handler(req, res) {
 
   const key = apiKey();
   if (!key) {
-    // TEMP diagnostic: report env-var NAMES (never values) that look key-ish, so
-    // we can spot a misnamed/mis-scoped var. Remove after setup is confirmed.
-    const SYSTEM = /^(AWS_|VERCEL_|LAMBDA_|_|NODE_|PATH$|PWD$|LANG$|TZ$|HOME$|SHLVL$|NOW_)/;
-    const envHints = Object.keys(process.env).filter((k) => !SYSTEM.test(k)).sort();
-    return res.status(200).json({ ok: false, configured: false, message: 'No API key set (APISPORTS_KEY). Manual entry still works.', envHints });
-  }
-
-  // TEMP diagnostic: ?diag=1 reports the account's plan + which World Cup
-  // leagues/seasons the key can actually access. Remove after setup.
-  if ((req.query?.diag ?? '') === '1') {
-    try {
-      const h = { 'x-apisports-key': key };
-      const [statusRes, leaguesRes] = await Promise.all([
-        fetch(`${API_BASE}/status`, { headers: h }).then((r) => r.json()),
-        fetch(`${API_BASE}/leagues?search=world cup`, { headers: h }).then((r) => r.json()),
-      ]);
-      const worldCups = (leaguesRes?.response || []).map((l) => ({
-        id: l?.league?.id,
-        name: l?.league?.name,
-        seasons: (l?.seasons || []).map((s) => s.year),
-      })).filter((l) => l.id === 1);
-      const fxRes = await fetch(`${API_BASE}/fixtures?league=${LEAGUE_ID}&season=${SEASON}`, { headers: h }).then((r) => r.json());
-      const fx = fxRes?.response || [];
-      const sample = fx.slice(0, 5).map((f) => ({
-        date: f?.fixture?.date, status: f?.fixture?.status?.short,
-        round: f?.league?.round, home: f?.teams?.home?.name, away: f?.teams?.away?.name,
-      }));
-      return res.status(200).json({ diag: true, status: statusRes?.response, worldCups, fixturesForSeason: fx.length, sample });
-    } catch (e) {
-      return res.status(200).json({ diag: true, error: String(e) });
-    }
+    return res.status(200).json({ ok: false, configured: false, message: 'No API key set (APISPORTS_KEY). Manual entry still works.' });
   }
 
   const state = await getState();
