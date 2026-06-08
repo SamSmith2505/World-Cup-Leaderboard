@@ -8,14 +8,19 @@
 // back to a local JSON file so it works in `vercel dev` / local node without KV.
 // ============================================================================
 
-import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const STATE_KEY = 'wc:state';
 const SNAP_KEY = 'wc:snapshot';
 const LOCAL_FILE = path.join('/tmp', 'wc-state.json');
-const useKV = !!process.env.KV_REST_API_URL;
+
+// Accept either Vercel KV or raw Upstash env var naming.
+const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+const useKV = !!(KV_URL && KV_TOKEN);
+const kv = useKV ? createClient({ url: KV_URL, token: KV_TOKEN }) : null;
 
 const EMPTY_STATE = { matches: [], advancement: {}, meta: { lastUpdated: null } };
 
