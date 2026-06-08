@@ -83,6 +83,7 @@ main { padding-top: 14px; }
 .pts-max { font-family: var(--font-display); font-size: 10.5px; color: var(--muted); letter-spacing: .2px; margin-top: 1px; }
 
 /* Differentials */
+#diffs { margin-top: 14px; }
 .diffs-body { display: flex; flex-direction: column; gap: 9px; }
 .diff-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 9px; font-size: 12.5px; }
 .diff-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; padding: 2px 7px; border-radius: 6px; }
