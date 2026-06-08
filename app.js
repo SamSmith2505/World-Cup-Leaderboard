@@ -7,8 +7,6 @@ const teamsEl = document.getElementById('teams');
 const metaEl = document.getElementById('meta');
 const moversEl = document.getElementById('movers');
 const moversList = document.getElementById('moversList');
-const diffsEl = document.getElementById('diffs');
-const diffsBody = document.getElementById('diffsBody');
 
 const expanded = new Set();
 let lastData = null; // { state, snapshot, roster }
@@ -45,7 +43,6 @@ async function load() {
     const { standings, lastUpdated } = compute(state, lastData.roster);
     render(standings);
     renderMovers(standings, lastData.snapshot);
-    renderDiffs(lastData.roster);
     renderMeta(lastUpdated, lastData.roster.length, lastData.rosterSource);
     if (!document.getElementById('view-teams').classList.contains('hidden')) renderTeams();
     if (!document.getElementById('view-own').classList.contains('hidden')) renderOwnership();
@@ -138,35 +135,6 @@ function stageTag(stage) {
 }
 
 // ---- points by team --------------------------------------------------------
-function renderDiffs(roster) {
-  const players = roster.length;
-  if (players < 2) { diffsEl.classList.add('hidden'); return; }
-  const owners = ownersByTeam();
-  const solo = [];
-  const consensus = [];
-  for (const [team, list] of Object.entries(owners)) {
-    if (list.length === 1) solo.push({ team, who: list[0] });
-    if (list.length === players) consensus.push(team);
-  }
-  if (!solo.length && !consensus.length) { diffsEl.classList.add('hidden'); return; }
-  diffsEl.classList.remove('hidden');
-  solo.sort((a, b) => (tierOf(b.team) || 0) - (tierOf(a.team) || 0)); // riskier (higher tier) first
-  const soloShown = solo.slice(0, 6);
-  let html = '';
-  if (soloShown.length) {
-    html += `<div class="diff-line"><span class="diff-tag solo">Solo picks</span>` +
-      soloShown.map((s) => `<span class="diff-item">${flagImg(s.team, 'rsub-flag')}${escapeHtml(short(s.team))} <em>${escapeHtml(s.who)}</em></span>`).join('') +
-      (solo.length > soloShown.length ? `<span class="diff-more">+${solo.length - soloShown.length} more</span>` : '') +
-      `</div>`;
-  }
-  if (consensus.length) {
-    html += `<div class="diff-line"><span class="diff-tag all">Everyone</span>` +
-      consensus.map((t) => `<span class="diff-item">${flagImg(t, 'rsub-flag')}${escapeHtml(short(t))}</span>`).join('') +
-      `</div>`;
-  }
-  diffsBody.innerHTML = html;
-}
-
 function ownersByTeam() {
   const map = {};
   for (const p of lastData.roster) {
