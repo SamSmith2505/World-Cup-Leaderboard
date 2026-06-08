@@ -75,8 +75,9 @@ function rowEl(row) {
   const scored = row.breakdown.filter((t) => t.total > 0);
   let sub = '';
   if (scored.length) {
-    const best = row.breakdown[0];
-    const worst = row.breakdown[row.breakdown.length - 1];
+    const byPts = [...row.breakdown].sort((a, b) => b.total - a.total);
+    const best = byPts[0];
+    const worst = byPts[byPts.length - 1];
     sub = `<div class="rsub">
       <span class="bw up">▲ ${flagImg(best.team, 'rsub-flag')}${escapeHtml(short(best.team))} ${fmt(best.total)}</span>
       <span class="bw down">▼ ${flagImg(worst.team, 'rsub-flag')}${escapeHtml(short(worst.team))} ${fmt(worst.total)}</span>
