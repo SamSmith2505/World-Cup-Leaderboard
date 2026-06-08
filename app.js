@@ -1,6 +1,6 @@
 // Public page — leaderboard + points-by-team, with throttled auto-sync.
 import { compute, computeMovers, computeTeamPoints } from '/lib/scoring.js';
-import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS } from '/lib/config.js';
+import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl } from '/lib/config.js';
 
 const boardEl = document.getElementById('board');
 const teamsEl = document.getElementById('teams');
@@ -90,7 +90,7 @@ function breakdownTable(breakdown) {
     const tr = document.createElement('tr');
     const mult = TIER_MULTIPLIERS[tp.tier] ?? tp.multiplier ?? 1;
     tr.innerHTML = `
-      <td>${escapeHtml(tp.team)}${stageTag(tp.stage)}</td>
+      <td>${flagImg(tp.team, 'bd-flag')}${escapeHtml(tp.team)}${stageTag(tp.stage)}</td>
       <td>T${tp.tier ?? '?'}</td>
       <td class="num" title="match ${fmt(tp.matchPts)} + goals ${fmt(tp.goals)} + bonus ${fmt(tp.advBonus)}">${fmt(tp.raw)}</td>
       <td class="num">${mult}</td>
@@ -194,6 +194,7 @@ function teamCard(r) {
     : `Picked by <b>0</b>`;
   card.innerHTML = `
     <div class="tc-head">
+      ${flagImg(r.team, 'tc-flag')}
       <span class="tc-name">${escapeHtml(r.team)}${stageTag(r.stage)}</span>
       ${r.group ? `<span class="tc-grp">Grp ${escapeHtml(r.group)}</span>` : ''}
       <span class="tc-tier tier-${r.tier}">T${r.tier ?? '?'}</span>
@@ -239,6 +240,12 @@ async function triggerSync() {
     const j = await fetch('/api/sync').then((r) => r.json());
     if (j && j.updated) load(); // new results -> refresh
   } catch {}
+}
+
+function flagImg(team, cls) {
+  const url = flagUrl(team, 40);
+  if (!url) return `<span class="${cls} noflag"></span>`;
+  return `<img class="${cls}" src="${url}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
 }
 
 function fmt(n) { const v = Number(n) || 0; return Number.isInteger(v) ? String(v) : v.toFixed(1); }
