@@ -22,10 +22,20 @@ async function load() {
   state = s.state || { matches: [], advancement: {}, meta: {} };
   state.matches = state.matches || [];
   state.advancement = state.advancement || {};
+  state.meta = state.meta || {};
   roster = r.roster || [];
+  renderSyncInfo();
   renderMatches();
   renderAdvancement();
 }
+
+function renderSyncInfo() {
+  const el = $('syncInfo');
+  const t = state.meta?.lastSyncAt;
+  el.textContent = t ? `last API sync: ${new Date(t).toLocaleString()}` : 'no API sync yet';
+}
+
+function isManual(m) { return m?.source === 'manual' || m?.manual === true; }
 
 function renderMatches() {
   const c = $('matches');
@@ -44,7 +54,7 @@ function renderMatches() {
       <input class="grow" list="teams" data-i="${i}" data-f="teamB" value="${attr(m.teamB)}" />
       <label class="muted"><input type="checkbox" data-i="${i}" data-f="final" ${m.final ? 'checked' : ''}/> final</label>
       ${needsWinner(m) ? winnerSelect(m, i) : ''}
-      <span class="flag">manual</span>
+      ${isManual(m) ? '<span class="flag">manual</span>' : '<span class="flag2">auto</span>'}
       <button class="btn danger" data-del="${i}">✕</button>`;
     c.appendChild(row);
   });
@@ -75,7 +85,8 @@ function onField(e) {
   else if (f === 'teamA' || f === 'teamB') m[f] = canonicalTeam(e.target.value);
   else m[f] = e.target.value;
   m.manual = true;
-  if (f === 'round' || f === 'scoreA' || f === 'scoreB') renderMatches();
+  m.source = 'manual'; // editing an auto match converts it to a manual override
+  renderMatches();
 }
 
 $('addMatch').addEventListener('click', () => {
@@ -85,7 +96,7 @@ $('addMatch').addEventListener('click', () => {
   state.matches.push({
     round: $('nRound').value, teamA: a, teamB: b,
     scoreA: Number($('nSA').value) || 0, scoreB: Number($('nSB').value) || 0,
-    final: true, manual: true,
+    final: true, manual: true, source: 'manual',
   });
   $('nA').value = ''; $('nB').value = ''; $('nSA').value = 0; $('nSB').value = 0;
   renderMatches();
@@ -137,9 +148,23 @@ async function snapshot() {
   toast('Snapshot saved ✓ (movers reset)');
 }
 
+async function syncNow() {
+  toast('Syncing…');
+  try {
+    const j = await fetch('/api/sync?force=1').then((r) => r.json());
+    if (j.configured === false) return toast('No API key set on server');
+    if (j.ok === false) return toast('Sync failed: ' + (j.error || j.message || '?'));
+    await load();
+    let msg = `Synced ✓ ${j.updated} auto matches`;
+    if (j.unmatchedTeams?.length) msg += ` · unmatched: ${j.unmatchedTeams.join(', ')}`;
+    toast(msg);
+  } catch (e) { toast('Sync error'); }
+}
+
 $('save').addEventListener('click', save);
 $('reload').addEventListener('click', load);
 $('snapshot').addEventListener('click', snapshot);
+$('syncNow').addEventListener('click', syncNow);
 
 function toast(msg) {
   const t = document.createElement('div');

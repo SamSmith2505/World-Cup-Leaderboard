@@ -88,4 +88,33 @@ ok('ranking is correct (highest first, ties share rank)', () => {
   assert.equal(standings[1].rank, 2);
 });
 
+ok('per-source breakdown splits points correctly', () => {
+  const a = teams['Argentina'].src;
+  assert.equal(a.groupWin.pts, 3);  assert.equal(a.groupWin.n, 1);
+  assert.equal(a.groupGoals.pts, 3); assert.equal(a.groupGoals.n, 3);
+  assert.equal(a.koWin.pts, 5);     assert.equal(a.koWin.n, 1);
+  assert.equal(a.koGoals.pts, 0);
+  assert.equal(a.adv.pts, 67);
+  const n = teams['Norway'].src;
+  assert.equal(n.groupDraw.pts, 1); assert.equal(n.groupGoals.pts, 2);
+});
+
+ok('manual entry overrides API entry for the same fixture', () => {
+  const s = {
+    matches: [
+      { round: 'group', teamA: 'Ghana', teamB: 'Iran', scoreA: 1, scoreB: 1, final: true, source: 'api' },
+      // same fixture (order swapped), entered manually -> should win:
+      { round: 'group', teamA: 'Iran', teamB: 'Ghana', scoreA: 0, scoreB: 3, final: true, source: 'manual' },
+    ],
+    advancement: {},
+  };
+  const t = computeTeamPoints(s);
+  // Ghana counted from the MANUAL match only: win 3 + 3 goals = 6 raw
+  assert.equal(t['Ghana'].matchPts, 3);
+  assert.equal(t['Ghana'].goals, 3);
+  assert.equal(t['Ghana'].raw, 6);
+  assert.equal(t['Ghana'].games, 1); // not double-counted
+  assert.equal(t['Iran'].raw, 0);
+});
+
 console.log(`\n${pass} tests passed ✓`);

@@ -29,6 +29,14 @@
 
     <h2>Matches</h2>
     <div class="card">
+      <div class="sync-bar">
+        <button class="btn secondary" id="syncNow">↻ Sync from API now</button>
+        <span class="muted" id="syncInfo"></span>
+      </div>
+      <p class="muted" style="margin:6px 0 10px">
+        Auto-pulled matches are flagged <span class="flag2">auto</span>. Editing one turns it into a
+        <span class="flag">manual</span> override that always wins and survives future syncs.
+      </p>
       <div class="match-row" id="newMatch">
         <select id="nRound" class="grow"></select>
         <input id="nA" class="grow" list="teams" placeholder="Team A" />

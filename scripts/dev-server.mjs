@@ -34,6 +34,11 @@ const server = http.createServer(async (req, res) => {
     return json(res, { roster, source });
   }
 
+  if (p === '/api/sync') {
+    // No API key locally -> behave like the real handler with no key configured.
+    return json(res, { ok: false, configured: false, message: 'dev: no API key' });
+  }
+
   if (p === '/api/state') {
     if (req.method === 'GET') return json(res, store);
     if (req.method === 'POST') {

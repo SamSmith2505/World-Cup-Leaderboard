@@ -12,23 +12,45 @@
     <div class="wrap">
       <h1>🏆 World Cup 2026 Pool</h1>
       <div class="sub" id="meta">Loading…</div>
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="board" role="tab">Leaderboard</button>
+        <button class="tab" data-tab="teams" role="tab">Points by Team</button>
+      </nav>
     </div>
   </header>
 
   <main class="wrap">
-    <section id="movers" class="movers hidden">
-      <h2>📈 Today's biggest movers</h2>
-      <div id="moversList" class="movers-list"></div>
+    <section id="view-board">
+      <section id="movers" class="movers hidden">
+        <h2>📈 Today's biggest movers</h2>
+        <div id="moversList" class="movers-list"></div>
+      </section>
+
+      <section id="board" class="board" aria-live="polite">
+        <div class="loading">Loading leaderboard…</div>
+      </section>
+
+      <p class="foot">
+        Tap a row to see each team's contribution. Tiers &amp; multipliers are fixed;
+        results are entered/confirmed by the admin.
+      </p>
     </section>
 
-    <section id="board" class="board" aria-live="polite">
-      <div class="loading">Loading leaderboard…</div>
+    <section id="view-teams" class="hidden">
+      <div class="teams-controls">
+        <label class="muted" for="teamSort">Sort</label>
+        <select id="teamSort">
+          <option value="total">Total points</option>
+          <option value="tier">Tier</option>
+          <option value="name">Name</option>
+        </select>
+        <label class="muted check"><input type="checkbox" id="onlyScored" checked /> only teams with points</label>
+      </div>
+      <section id="teams" class="teams" aria-live="polite">
+        <div class="loading">Loading…</div>
+      </section>
+      <p class="foot">Each team's points before the tier multiplier, broken out by source.</p>
     </section>
-
-    <p class="foot">
-      Tap a row to see each team's contribution. Tiers &amp; multipliers are fixed;
-      results are entered/confirmed by the admin.
-    </p>
   </main>
 
   <script type="module" src="/app.js"></script>
