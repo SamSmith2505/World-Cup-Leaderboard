@@ -7,6 +7,8 @@ const teamsEl = document.getElementById('teams');
 const metaEl = document.getElementById('meta');
 const moversEl = document.getElementById('movers');
 const moversList = document.getElementById('moversList');
+const diffsEl = document.getElementById('diffs');
+const diffsBody = document.getElementById('diffsBody');
 
 const expanded = new Set();
 let lastData = null; // { state, snapshot, roster }
@@ -38,6 +40,7 @@ async function load() {
     const { standings, lastUpdated } = compute(state, lastData.roster);
     render(standings);
     renderMovers(standings, lastData.snapshot);
+    renderDiffs(lastData.roster);
     renderMeta(lastUpdated, lastData.roster.length, lastData.rosterSource);
     if (!document.getElementById('view-teams').classList.contains('hidden')) renderTeams();
   } catch (e) {
@@ -60,13 +63,32 @@ function render(standings) {
 
 function rowEl(row) {
   const wrap = document.createElement('div');
-  wrap.className = 'row' + (expanded.has(row.name) ? ' open' : '');
+  wrap.className = 'row' + (expanded.has(row.name) ? ' open' : '') + (row.rank === 1 ? ' champ' : '');
   const head = document.createElement('button');
   head.className = 'row-head';
+
+  // Best & worst contributing team (only meaningful once someone has points).
+  const scored = row.breakdown.filter((t) => t.total > 0);
+  let sub = '';
+  if (scored.length) {
+    const best = row.breakdown[0];
+    const worst = row.breakdown[row.breakdown.length - 1];
+    sub = `<div class="rsub">
+      <span class="bw up">▲ ${flagImg(best.team, 'rsub-flag')}${escapeHtml(short(best.team))} ${fmt(best.total)}</span>
+      <span class="bw down">▼ ${flagImg(worst.team, 'rsub-flag')}${escapeHtml(short(worst.team))} ${fmt(worst.total)}</span>
+    </div>`;
+  }
+
   head.innerHTML = `
     <span class="rank rank-${row.rank}">${row.rank}</span>
-    <span class="name">${escapeHtml(row.name)}</span>
-    <span class="pts">${fmt(row.total)}</span>
+    <div class="rcol">
+      <span class="name">${row.rank === 1 ? '👑 ' : ''}${escapeHtml(row.name)}</span>
+      ${sub}
+    </div>
+    <div class="ptcol">
+      <span class="pts">${fmt(row.total)}</span>
+      <span class="pts-max">max ${fmt(row.ceiling)}</span>
+    </div>
     <span class="chev" aria-hidden="true">▸</span>`;
   head.addEventListener('click', () => {
     if (expanded.has(row.name)) expanded.delete(row.name); else expanded.add(row.name);
@@ -77,6 +99,11 @@ function rowEl(row) {
   body.appendChild(breakdownTable(row.breakdown));
   wrap.appendChild(head); wrap.appendChild(body);
   return wrap;
+}
+
+function short(name) {
+  const map = { 'United States': 'USA', 'Bosnia and Herzegovina': 'Bosnia', 'South Africa': 'S Africa', 'South Korea': 'S Korea', 'Saudi Arabia': 'Saudi', 'New Zealand': 'NZ' };
+  return map[name] || name;
 }
 
 function breakdownTable(breakdown) {
@@ -107,6 +134,35 @@ function stageTag(stage) {
 }
 
 // ---- points by team --------------------------------------------------------
+function renderDiffs(roster) {
+  const players = roster.length;
+  if (players < 2) { diffsEl.classList.add('hidden'); return; }
+  const owners = ownersByTeam();
+  const solo = [];
+  const consensus = [];
+  for (const [team, list] of Object.entries(owners)) {
+    if (list.length === 1) solo.push({ team, who: list[0] });
+    if (list.length === players) consensus.push(team);
+  }
+  if (!solo.length && !consensus.length) { diffsEl.classList.add('hidden'); return; }
+  diffsEl.classList.remove('hidden');
+  solo.sort((a, b) => (tierOf(b.team) || 0) - (tierOf(a.team) || 0)); // riskier (higher tier) first
+  const soloShown = solo.slice(0, 6);
+  let html = '';
+  if (soloShown.length) {
+    html += `<div class="diff-line"><span class="diff-tag solo">Solo picks</span>` +
+      soloShown.map((s) => `<span class="diff-item">${flagImg(s.team, 'rsub-flag')}${escapeHtml(short(s.team))} <em>${escapeHtml(s.who)}</em></span>`).join('') +
+      (solo.length > soloShown.length ? `<span class="diff-more">+${solo.length - soloShown.length} more</span>` : '') +
+      `</div>`;
+  }
+  if (consensus.length) {
+    html += `<div class="diff-line"><span class="diff-tag all">Everyone</span>` +
+      consensus.map((t) => `<span class="diff-item">${flagImg(t, 'rsub-flag')}${escapeHtml(short(t))}</span>`).join('') +
+      `</div>`;
+  }
+  diffsBody.innerHTML = html;
+}
+
 function ownersByTeam() {
   const map = {};
   for (const p of lastData.roster) {
