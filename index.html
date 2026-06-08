@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
+  <title>World Cup 2026 Pool</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <h1>🏆 World Cup 2026 Pool</h1>
+      <div class="sub" id="meta">Loading…</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="movers" class="movers hidden">
+      <h2>📈 Today's biggest movers</h2>
+      <div id="moversList" class="movers-list"></div>
+    </section>
+
+    <section id="board" class="board" aria-live="polite">
+      <div class="loading">Loading leaderboard…</div>
+    </section>
+
+    <p class="foot">
+      Tap a row to see each team's contribution. Tiers &amp; multipliers are fixed;
+      results are entered/confirmed by the admin.
+    </p>
+  </main>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

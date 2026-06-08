@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Pool Admin</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <h1>🛠️ Pool Admin</h1>
+      <div class="sub" id="meta">Manual entries override the API and are flagged.</div>
+    </div>
+  </header>
+
+  <main class="wrap admin">
+    <div class="card">
+      <label class="muted">Admin token (only needed if ADMIN_TOKEN is set on the server)</label><br/>
+      <input id="token" type="password" placeholder="leave blank if none" style="width:100%;margin-top:6px" />
+      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap">
+        <button class="btn secondary" id="reload">Reload</button>
+        <button class="btn" id="save">Save all changes</button>
+        <button class="btn secondary" id="snapshot" title="Freeze current standings so the public page can show movers">Snapshot “today”</button>
+        <a class="btn secondary" href="/" style="text-decoration:none">View leaderboard ↗</a>
+      </div>
+    </div>
+
+    <h2>Matches</h2>
+    <div class="card">
+      <div class="match-row" id="newMatch">
+        <select id="nRound" class="grow"></select>
+        <input id="nA" class="grow" list="teams" placeholder="Team A" />
+        <input id="nSA" type="number" min="0" value="0" />
+        <span>–</span>
+        <input id="nSB" type="number" min="0" value="0" />
+        <input id="nB" class="grow" list="teams" placeholder="Team B" />
+        <button class="btn" id="addMatch">Add</button>
+      </div>
+      <datalist id="teams"></datalist>
+      <div id="matches"></div>
+    </div>
+
+    <h2>Advancement (confirm stage reached)</h2>
+    <p class="muted">Cumulative — picking “Reached Semifinal” awards the R32 + QF + SF bonuses. Only teams someone picked are shown.</p>
+    <div class="card" id="advancement"></div>
+  </main>
+
+  <script type="module" src="/admin.js"></script>
+</body>
+</html>
