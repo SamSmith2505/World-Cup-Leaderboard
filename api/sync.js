@@ -59,10 +59,15 @@ export default async function handler(req, res) {
       const worldCups = (leaguesRes?.response || []).map((l) => ({
         id: l?.league?.id,
         name: l?.league?.name,
-        type: l?.league?.type,
         seasons: (l?.seasons || []).map((s) => s.year),
+      })).filter((l) => l.id === 1);
+      const fxRes = await fetch(`${API_BASE}/fixtures?league=${LEAGUE_ID}&season=${SEASON}`, { headers: h }).then((r) => r.json());
+      const fx = fxRes?.response || [];
+      const sample = fx.slice(0, 5).map((f) => ({
+        date: f?.fixture?.date, status: f?.fixture?.status?.short,
+        round: f?.league?.round, home: f?.teams?.home?.name, away: f?.teams?.away?.name,
       }));
-      return res.status(200).json({ diag: true, status: statusRes?.response, worldCups });
+      return res.status(200).json({ diag: true, status: statusRes?.response, worldCups, fixturesForSeason: fx.length, sample });
     } catch (e) {
       return res.status(200).json({ diag: true, error: String(e) });
     }
