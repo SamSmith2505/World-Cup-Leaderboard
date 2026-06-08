@@ -223,3 +223,33 @@ table.own thead th { position: sticky; top: 0; background: var(--card2); z-index
 .own-cnt-h { color: var(--muted); }
 tr.own-elim { opacity: .72; }
 tr.own-elim .own-tname { text-decoration: line-through; opacity: .7; }
+
+/* Live + today's matches */
+.live, .today { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.live { border-color: rgba(251, 113, 133, .4); margin-bottom: 14px; }
+#today { margin-top: 14px; }
+.live h2, .today h2 { margin: 0 0 9px; font-size: 14px; color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 5px; }
+.live-list, .today-list { display: flex; flex-direction: column; gap: 10px; }
+.match { background: var(--card2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.live-match { border-color: rgba(251, 113, 133, .35); }
+.ms-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.ms-team { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; min-width: 0; }
+.ms-team.l { justify-content: flex-start; }
+.ms-team.r { justify-content: flex-end; }
+.ms-score { font-family: var(--font-display); font-weight: 700; font-size: 18px; white-space: nowrap; }
+.ms-dash { color: var(--muted); margin: 0 4px; }
+.ms-time { font-family: var(--font-display); color: var(--muted); font-weight: 600; font-size: 14px; white-space: nowrap; }
+.ms-meta { text-align: center; margin-top: 4px; }
+.ms-tag { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 6px; }
+.ms-tag.live { background: rgba(251, 113, 133, .18); color: var(--down); }
+.ms-tag.done { background: var(--card); color: var(--muted); }
+.ms-clock { font-size: 12px; font-weight: 700; color: var(--down); }
+.ms-stake { margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); text-align: center; }
+.ms-stake b { color: var(--gold); }
+.ms-stake.none { opacity: .55; }
+.live-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--down); animation: pulse 1.5s infinite; }
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(251, 113, 133, .5); }
+  70% { box-shadow: 0 0 0 7px rgba(251, 113, 133, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(251, 113, 133, 0); }
+}

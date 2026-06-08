@@ -7,6 +7,13 @@ const teamsEl = document.getElementById('teams');
 const metaEl = document.getElementById('meta');
 const moversEl = document.getElementById('movers');
 const moversList = document.getElementById('moversList');
+const liveEl = document.getElementById('live');
+const liveList = document.getElementById('liveList');
+const todayEl = document.getElementById('today');
+const todayList = document.getElementById('todayList');
+
+// API-Football statuses that mean a match is in progress.
+const LIVE_STATUSES = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']);
 
 const expanded = new Set();
 let lastData = null; // { state, snapshot, roster }
@@ -43,6 +50,8 @@ async function load() {
     const { standings, lastUpdated } = compute(state, lastData.roster);
     render(standings);
     renderMovers(standings, lastData.snapshot);
+    renderLive(state);
+    renderToday(state);
     renderMeta(lastUpdated, lastData.roster.length, lastData.rosterSource);
     if (!document.getElementById('view-teams').classList.contains('hidden')) renderTeams();
     if (!document.getElementById('view-own').classList.contains('hidden')) renderOwnership();
@@ -283,6 +292,74 @@ function renderOwnership() {
   }
   html += '</tbody>';
   el.innerHTML = html;
+}
+
+// ---- live + today's matches ------------------------------------------------
+function stakeholders(teamA, teamB) {
+  const owners = ownersByTeam();
+  return [...new Set([...(owners[canonicalTeam(teamA)] || []), ...(owners[canonicalTeam(teamB)] || [])])];
+}
+
+function teamSide(team, align) {
+  return `<span class="ms-team ${align}">${flagImg(team, 'rsub-flag')}${escapeHtml(short(team))}</span>`;
+}
+
+function stakeLine(teamA, teamB) {
+  const who = stakeholders(teamA, teamB);
+  if (!who.length) return `<div class="ms-stake none">nobody picked these</div>`;
+  const shown = who.slice(0, 6).map(escapeHtml).join(', ');
+  const extra = who.length > 6 ? ` +${who.length - 6}` : '';
+  return `<div class="ms-stake"><b>${who.length}</b> riding · ${shown}${extra}</div>`;
+}
+
+function liveClock(f) {
+  if (f.status === 'HT') return 'HT';
+  if (f.status === 'P') return 'PENS';
+  return f.elapsed != null ? `${f.elapsed}'` : 'LIVE';
+}
+
+function matchCard(x, opts) {
+  const mid = opts.mid;
+  return `<div class="match ${opts.cls || ''}">
+    <div class="ms-row">
+      ${teamSide(x.teamA, 'l')}
+      ${mid}
+      ${teamSide(x.teamB, 'r')}
+    </div>
+    ${opts.tag ? `<div class="ms-meta">${opts.tag}</div>` : ''}
+    ${stakeLine(x.teamA, x.teamB)}
+  </div>`;
+}
+
+function scoreHtml(a, b) { return `<span class="ms-score">${a}<span class="ms-dash">–</span>${b}</span>`; }
+
+function renderLive(state) {
+  const live = (state.fixtures || []).filter((f) => LIVE_STATUSES.has(f.status))
+    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+  if (!live.length) { liveEl.classList.add('hidden'); return; }
+  liveEl.classList.remove('hidden');
+  liveList.innerHTML = live.map((f) => matchCard(f, {
+    cls: 'live-match',
+    mid: scoreHtml(f.scoreA, f.scoreB),
+    tag: `<span class="ms-clock">🔴 ${liveClock(f)}</span>`,
+  })).join('');
+}
+
+function renderToday(state) {
+  const all = [];
+  for (const m of state.matches || []) if (m.date && !m.manual && m.source !== 'manual') all.push({ ...m, _final: true });
+  for (const f of state.fixtures || []) all.push({ ...f, _final: false });
+  const now = new Date();
+  const sameDay = (iso) => { const d = new Date(iso); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate(); };
+  const todays = all.filter((x) => x.date && sameDay(x.date)).sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+  if (!todays.length) { todayEl.classList.add('hidden'); return; }
+  todayEl.classList.remove('hidden');
+  todayList.innerHTML = todays.map((x) => {
+    if (x._final) return matchCard(x, { cls: 'done', mid: scoreHtml(x.scoreA, x.scoreB), tag: `<span class="ms-tag done">FT</span>` });
+    if (LIVE_STATUSES.has(x.status)) return matchCard(x, { cls: 'live', mid: scoreHtml(x.scoreA, x.scoreB), tag: `<span class="ms-tag live">🔴 ${liveClock(x)}</span>` });
+    const time = new Date(x.date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return matchCard(x, { mid: `<span class="ms-time">${time}</span>`, tag: '' });
+  }).join('');
 }
 
 // ---- movers ----------------------------------------------------------------

@@ -86,13 +86,17 @@ export default async function handler(req, res) {
         id: 'api:' + fx?.fixture?.id,
         source: 'api', manual: false,
         round, group, teamA, teamB, scoreA, scoreB, winner,
-        final: true, status,
+        final: true, status, date: fx?.fixture?.date,
       });
     } else {
-      // Scheduled / not-yet-final fixture -> kept for "next match".
+      // Scheduled OR in-progress fixture. Carries live score + minute when live,
+      // used for the "next match", "live now", and "today's matches" views.
       upcoming.push({
         id: 'api:' + fx?.fixture?.id,
         date: fx?.fixture?.date, round, group, teamA, teamB, status,
+        scoreA: Number(fx?.goals?.home) || 0,
+        scoreB: Number(fx?.goals?.away) || 0,
+        elapsed: fx?.fixture?.status?.elapsed ?? null,
       });
     }
   }

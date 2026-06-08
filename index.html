@@ -27,6 +27,11 @@
 
   <main class="wrap">
     <section id="view-board">
+      <section id="live" class="live hidden">
+        <h2><span class="live-dot"></span> Live now</h2>
+        <div id="liveList" class="live-list"></div>
+      </section>
+
       <section id="movers" class="movers hidden">
         <h2>📈 Today's biggest movers</h2>
         <div id="moversList" class="movers-list"></div>
@@ -34,6 +39,11 @@
 
       <section id="board" class="board" aria-live="polite">
         <div class="loading">Loading leaderboard…</div>
+      </section>
+
+      <section id="today" class="today hidden">
+        <h2>📅 Today's matches</h2>
+        <div id="todayList" class="today-list"></div>
       </section>
 
       <p class="autonote">🟢 Scores auto-update about every 20 minutes</p>
