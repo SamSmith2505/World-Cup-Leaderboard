@@ -70,13 +70,35 @@ npm test
 5. (Optional) **Snapshot "today"** to freeze current standings so the public page's
    "biggest movers" compares against that baseline.
 
-## Wiring an API later (optional)
+## Auto-updating scores (API-Football)
 
-The app is manual-first by design (free-tier WC2026 coverage is unreliable). To add
-auto-pull, create `api/sync.js` that fetches fixtures/results from your provider,
-maps them into the same `state.matches` shape, and writes via the KV helpers in
-`api/state.js`. Keep advancement as a manual confirm step. Store the API key in an
-env var. A Vercel Cron can call it a few times a day.
+`/api/sync` pulls World Cup fixtures from API-Football, maps rounds/teams/groups,
+and merges them into state — **without ever clobbering manual entries** (a manual
+edit for a fixture always wins and survives future syncs). Advancement bonuses
+stay a manual confirm step.
+
+To turn it on:
+1. Get a free key at https://dashboard.api-football.com (api-sports.io **direct**,
+   not RapidAPI).
+2. Add `APISPORTS_KEY` to Vercel env vars; redeploy.
+
+How updates are triggered:
+- **GitHub Actions** (`.github/workflows/sync.yml`) pings `/api/sync?force=1` every
+  15 min. Free, no Vercel upgrade needed. Edit the cron to `*/20` for more rate-limit
+  headroom (see the rate-limit note in that file).
+- **Page visits** also nudge a sync, but the server throttles non-forced calls to
+  ~15 min so viewers don't burn extra API quota on top of the cron.
+- A daily Vercel cron is kept as a backstop.
+
+Rate limit: API-Football free = 100 req/day. `*/15` ≈ 96/day (tight), `*/20` ≈ 72/day.
+Hitting the cap just skips an update; nothing breaks.
+
+Optional hardening: set `SYNC_SECRET` in Vercel **and** as a GitHub repo secret of the
+same name — then only forced syncs carrying the secret bypass the throttle, so nobody
+can drain your daily quota via the public URL.
+
+Env overrides if the competition id/season differ: `WC_LEAGUE_ID` (default `1`),
+`WC_SEASON` (default `2026`).
 
 ## File map
 

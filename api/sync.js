@@ -14,10 +14,16 @@ import { getState, setState } from '../lib/store.js';
 import { canonicalTeam, tierOf, roundFromApi, groupFromApi, ROUND_INDEX, FINAL_STATUSES } from '../lib/config.js';
 import { fixtureKey } from '../lib/scoring.js';
 
-const THROTTLE_MS = 20 * 60 * 1000; // 20 min -> <= ~72 calls/day worst case
+// Throttle for NON-forced calls (page visits). The 15-min cron uses force=1 and
+// bypasses this; keeping it ~= the cron interval means viewer-triggered syncs
+// don't add API calls on top of the cron.
+const THROTTLE_MS = 15 * 60 * 1000;
 const API_BASE = process.env.API_FOOTBALL_BASE || 'https://v3.football.api-sports.io';
 const LEAGUE_ID = process.env.WC_LEAGUE_ID || '1'; // API-Football: World Cup = 1
 const SEASON = process.env.WC_SEASON || '2026';
+// Optional: if set, only force=1 requests carrying this secret bypass the
+// throttle (prevents someone draining the daily API quota via the public URL).
+const SYNC_SECRET = process.env.SYNC_SECRET || '';
 
 function apiKey() {
   return process.env.APISPORTS_KEY || process.env.API_FOOTBALL_KEY || '';
@@ -28,7 +34,9 @@ function isManual(m) {
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  const force = (req.query?.force ?? '') === '1' || (req.query?.force ?? '') === 'true';
+  const wantsForce = (req.query?.force ?? '') === '1' || (req.query?.force ?? '') === 'true';
+  const secretOk = !SYNC_SECRET || req.query?.key === SYNC_SECRET || req.headers['x-sync-secret'] === SYNC_SECRET;
+  const force = wantsForce && secretOk;
 
   const key = apiKey();
   if (!key) {

@@ -1,0 +1,31 @@
+name: Sync scores
+
+# Pings the app's /api/sync endpoint so World Cup results auto-update without
+# needing a paid Vercel cron.
+#
+# RATE LIMIT: API-Football free tier = 100 requests/day.
+#   */15 = ~96 calls/day (tight — little headroom for manual "Sync now" clicks)
+#   */20 = ~72 calls/day (recommended for comfortable margin)
+# Change the cron below to '*/20 * * * *' if you want more headroom.
+#
+# NOTE: GitHub's scheduled runs are best-effort and can be delayed under load.
+# If you need rock-solid 15-min timing, use https://cron-job.org instead
+# (point it at the same URL).
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger sync
+        env:
+          # Optional: only needed if you set SYNC_SECRET in Vercel. Add the same
+          # value as a GitHub repo secret named SYNC_SECRET.
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
+        run: |
+          curl -fsS "https://world-cup-leaderboard.vercel.app/api/sync?force=1&key=${SYNC_SECRET}" \
+            -H "x-sync-secret: ${SYNC_SECRET}" || true
