@@ -42,7 +42,8 @@ export default async function handler(req, res) {
   if (!key) {
     // TEMP diagnostic: report env-var NAMES (never values) that look key-ish, so
     // we can spot a misnamed/mis-scoped var. Remove after setup is confirmed.
-    const envHints = Object.keys(process.env).filter((k) => /API|KEY|FOOTBALL|SPORT|RAPID/i.test(k));
+    const SYSTEM = /^(AWS_|VERCEL_|LAMBDA_|_|NODE_|PATH$|PWD$|LANG$|TZ$|HOME$|SHLVL$|NOW_)/;
+    const envHints = Object.keys(process.env).filter((k) => !SYSTEM.test(k)).sort();
     return res.status(200).json({ ok: false, configured: false, message: 'No API key set (APISPORTS_KEY). Manual entry still works.', envHints });
   }
 
