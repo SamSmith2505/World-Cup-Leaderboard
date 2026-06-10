@@ -108,9 +108,11 @@ function gainedToday(name, currentTotal) {
   const snap = lastData?.snapshot;
   if (!snap || !snap.at) return null;
   if (Date.now() - Date.parse(snap.at) > 30 * 3600 * 1000) return null; // baseline too old
+  // Missing baseline (player joined after the snapshot) -> treat as 0 so the
+  // badge shows consistently for everyone.
   const prev = snap.standings?.find((s) => s.name === name);
-  if (!prev) return null;
-  return Math.round((currentTotal - prev.total) * 10) / 10;
+  const prevTotal = prev ? prev.total : 0;
+  return Math.round((currentTotal - prevTotal) * 10) / 10;
 }
 
 function short(name) {
