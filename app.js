@@ -264,7 +264,7 @@ function teamCard(r) {
 function renderOwnership() {
   if (!lastData) return;
   const el = document.getElementById('ownTable');
-  const players = lastData.roster.map((p) => p.name);
+  const players = lastData.roster.map((p) => p.name).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
   if (!players.length) { el.innerHTML = '<tbody><tr><td class="own-team">No players yet.</td></tr></tbody>'; return; }
 
   // player -> Set(canonical teams owned)

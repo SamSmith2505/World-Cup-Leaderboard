@@ -206,12 +206,12 @@ input[type=number] { width: 60px; }
 
 /* Team ownership matrix */
 .own-note { margin: 0 0 10px; font-size: 12px; }
-.own-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.own-scroll { overflow: auto; max-height: calc(100dvh - 200px); -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
 table.own { border-collapse: separate; border-spacing: 0; font-size: 13px; width: auto; }
 table.own th, table.own td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); white-space: nowrap; }
-table.own thead th { position: sticky; top: 0; background: var(--card2); z-index: 2; }
+table.own thead th { position: sticky; top: 0; background: var(--card2); z-index: 5; }
 .own-team, .own-team-h { position: sticky; left: 0; background: var(--card); }
-.own-team-h { z-index: 4; background: var(--card2); text-align: left; padding: 8px 10px; font-family: var(--font-display); }
+.own-team-h { z-index: 6; background: var(--card2); text-align: left; padding: 8px 10px; font-family: var(--font-display); }
 .own-team { z-index: 3; padding: 7px 10px; min-width: 158px; }
 .own-team .bd-flag { margin: 0 6px 0 0; }
 .own-tname { font-weight: 600; }
