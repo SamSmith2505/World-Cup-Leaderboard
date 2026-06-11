@@ -5,8 +5,6 @@ import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl, B
 const boardEl = document.getElementById('board');
 const teamsEl = document.getElementById('teams');
 const metaEl = document.getElementById('meta');
-const liveEl = document.getElementById('live');
-const liveList = document.getElementById('liveList');
 const todayEl = document.getElementById('today');
 const todayList = document.getElementById('todayList');
 
@@ -49,7 +47,6 @@ async function load() {
     const { standings, lastUpdated } = compute(state, lastData.roster);
     render(standings);
     renderPot(lastData.roster.length);
-    renderLive(state);
     renderToday(state);
     renderMeta(lastUpdated, lastData.roster.length, lastData.rosterSource);
     if (!document.getElementById('view-scores').classList.contains('hidden')) renderScores(false);
@@ -347,18 +344,6 @@ function matchCard(x, opts) {
 }
 
 function scoreHtml(a, b) { return `<span class="ms-score">${a}<span class="ms-dash">–</span>${b}</span>`; }
-
-function renderLive(state) {
-  const live = (state.fixtures || []).filter((f) => LIVE_STATUSES.has(f.status))
-    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
-  if (!live.length) { liveEl.classList.add('hidden'); return; }
-  liveEl.classList.remove('hidden');
-  liveList.innerHTML = live.map((f) => matchCard(f, {
-    cls: 'live-match',
-    mid: scoreHtml(f.scoreA, f.scoreB),
-    tag: `<span class="ms-clock">🔴 ${liveClock(f)}</span>`,
-  })).join('');
-}
 
 function renderToday(state) {
   const all = [];
