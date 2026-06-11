@@ -90,6 +90,7 @@ main { padding-top: 14px; }
 .today-gain.pos { color: var(--green); }
 .today-gain.neg { color: var(--down); }
 .today-gain.zero { color: var(--muted); font-weight: 600; }
+.live-pts { font-weight: 700; color: var(--down); white-space: nowrap; }
 .rsub-flag { width: 16px; height: 11px; display: inline-block; vertical-align: -1px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,.14); margin: 0 1px; }
 /* Eliminated marker */
 .elim {
@@ -267,6 +268,12 @@ tr.own-elim .own-tname { text-decoration: line-through; opacity: .7; }
 }
 .day.is-today .match { border-color: rgba(31, 184, 90, .35); }
 .ms-round { font-size: 11px; color: var(--muted); font-weight: 600; }
+/* Score-card team name + tier badge stacked under it */
+.sc-team-col { display: inline-flex; flex-direction: column; gap: 3px; min-width: 0; }
+.sc-team-name { font-weight: 600; }
+.ms-team.r .sc-team-col { align-items: flex-end; }
+.sc-tier { align-self: flex-start; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 5px; line-height: 1.4; }
+.ms-team.r .sc-tier { align-self: flex-end; }
 .sc-owners { margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; }
 .sc-own { display: flex; gap: 10px; font-size: 12px; align-items: baseline; }
 .sc-own-team { flex: none; width: 86px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }

@@ -134,4 +134,40 @@ ok('elimination: knockout losers out, group losers not, manual flag honored', ()
   assert.ok(!e.has('Brazil'));    // group loss isn't elimination; won its QF
 });
 
+ok('live in-progress fixtures credit goals (not win/draw) provisionally', () => {
+  const s = {
+    matches: [],
+    fixtures: [
+      // South Korea 1–0 live: goal counts, the win does NOT (can still flip).
+      { round: 'group', group: 'A', teamA: 'South Korea', teamB: 'Czechia', scoreA: 1, scoreB: 0, status: '1H' },
+      // A scheduled (not live) match must be ignored entirely.
+      { round: 'group', teamA: 'Canada', teamB: 'Qatar', scoreA: 0, scoreB: 0, status: 'NS' },
+    ],
+    advancement: {},
+  };
+  const t = computeTeamPoints(s);
+  assert.equal(t['South Korea'].goals, 1);
+  assert.equal(t['South Korea'].matchPts, 0);       // no provisional win
+  assert.equal(t['South Korea'].raw, 1);
+  assert.equal(t['South Korea'].total, 3.5);        // 1 goal × T5 (3.5)
+  assert.equal(t['South Korea'].live, true);
+  assert.equal(t['Czechia'].live, true);            // playing live, 0 goals
+  assert.equal(t['Czechia'].total, 0);
+  assert.equal(t['Canada'], undefined);             // scheduled, not counted
+});
+
+ok('a final match for a pairing suppresses any stale live fixture', () => {
+  const s = {
+    matches: [{ round: 'group', teamA: 'South Korea', teamB: 'Czechia', scoreA: 2, scoreB: 1, final: true }],
+    fixtures: [{ round: 'group', teamA: 'South Korea', teamB: 'Czechia', scoreA: 1, scoreB: 0, status: '2H' }],
+    advancement: {},
+  };
+  const t = computeTeamPoints(s);
+  // Counted once, from the FINAL match: win 3 + 2 goals = 5 raw (no double count).
+  assert.equal(t['South Korea'].goals, 2);
+  assert.equal(t['South Korea'].matchPts, 3);
+  assert.equal(t['South Korea'].raw, 5);
+  assert.ok(!t['South Korea'].live);
+});
+
 console.log(`\n${pass} tests passed ✓`);

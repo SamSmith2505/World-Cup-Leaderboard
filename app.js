@@ -1,15 +1,12 @@
 // Public page — leaderboard + points-by-team, with throttled auto-sync.
 import { compute, computeTeamPoints, eliminatedSet } from '/lib/scoring.js';
-import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl, BUY_IN_USD } from '/lib/config.js';
+import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl, BUY_IN_USD, LIVE_STATUSES } from '/lib/config.js';
 
 const boardEl = document.getElementById('board');
 const teamsEl = document.getElementById('teams');
 const metaEl = document.getElementById('meta');
 const todayEl = document.getElementById('today');
 const todayList = document.getElementById('todayList');
-
-// API-Football statuses that mean a match is in progress.
-const LIVE_STATUSES = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'SUSP', 'INT', 'LIVE']);
 
 const expanded = new Set();
 let lastData = null; // { state, snapshot, roster }
@@ -86,11 +83,17 @@ function rowEl(row) {
 
   // Points gained today (vs the daily baseline snapshot).
   const gain = gainedToday(row.name, row.total);
+  const hasLive = row.breakdown.some((t) => t.live);
   let sub = '';
-  if (gain !== null) {
-    const cls = gain > 0 ? 'pos' : gain < 0 ? 'neg' : 'zero';
-    const arrow = gain > 0 ? '▲ ' : gain < 0 ? '▼ ' : '';
-    sub = `<div class="rsub"><span class="today-gain ${cls}">${arrow}${gain > 0 ? '+' : ''}${fmt(gain)} today</span></div>`;
+  if (gain !== null || hasLive) {
+    const parts = [];
+    if (gain !== null) {
+      const cls = gain > 0 ? 'pos' : gain < 0 ? 'neg' : 'zero';
+      const arrow = gain > 0 ? '▲ ' : gain < 0 ? '▼ ' : '';
+      parts.push(`<span class="today-gain ${cls}">${arrow}${gain > 0 ? '+' : ''}${fmt(gain)} today</span>`);
+    }
+    if (hasLive) parts.push('<span class="live-pts">🔴 live</span>');
+    sub = `<div class="rsub">${parts.join('')}</div>`;
   }
 
   head.innerHTML = `
@@ -139,7 +142,7 @@ function breakdownTable(breakdown) {
     const tr = document.createElement('tr');
     const mult = TIER_MULTIPLIERS[tp.tier] ?? tp.multiplier ?? 1;
     tr.innerHTML = `
-      <td class="${isEliminated(tp.team) ? 'elim-cell' : ''}">${flagImg(tp.team, 'bd-flag')}${escapeHtml(tp.team)}${elimMark(tp.team)}${stageTag(tp.stage)}</td>
+      <td class="${isEliminated(tp.team) ? 'elim-cell' : ''}">${flagImg(tp.team, 'bd-flag')}${escapeHtml(tp.team)}${elimMark(tp.team)}${stageTag(tp.stage)}${tp.live ? ' <span class="live-pts" title="Playing live — goals count as they happen">🔴 live</span>' : ''}</td>
       <td>T${tp.tier ?? '?'}</td>
       <td class="num" title="match ${fmt(tp.matchPts)} + goals ${fmt(tp.goals)} + bonus ${fmt(tp.advBonus)}">${fmt(tp.raw)}</td>
       <td class="num">${mult}</td>
@@ -426,9 +429,9 @@ function scoreCard(x, owners) {
     : ({ r32: 'Round of 32', r16: 'Round of 16', qf: 'Quarterfinal', sf: 'Semifinal', final: 'Final' }[x.round] || '');
   return `<div class="match ${cls}">
     <div class="ms-row">
-      ${teamSide(x.teamA, 'l')}
+      ${scoreTeamSide(x.teamA, 'l')}
       ${mid}
-      ${teamSide(x.teamB, 'r')}
+      ${scoreTeamSide(x.teamB, 'r')}
     </div>
     ${(tag || round) ? `<div class="ms-meta">${tag}${round ? ` <span class="ms-round">${round}</span>` : ''}</div>` : ''}
     <div class="sc-owners">
@@ -436,6 +439,13 @@ function scoreCard(x, owners) {
       ${ownerLine(x.teamB, owners)}
     </div>
   </div>`;
+}
+
+// Score-card team display: flag + name with a small tier badge underneath.
+function scoreTeamSide(team, align) {
+  const tier = tierOf(team);
+  const badge = tier ? `<span class="sc-tier tier-${tier}">T${tier}</span>` : '';
+  return `<span class="ms-team ${align}">${flagImg(team, 'rsub-flag')}<span class="sc-team-col"><span class="sc-team-name">${escapeHtml(short(team))}</span>${badge}</span></span>`;
 }
 
 function ownerLine(team, owners) {
