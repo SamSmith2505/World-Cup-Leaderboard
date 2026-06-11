@@ -31,8 +31,28 @@ async function load() {
   state.meta = state.meta || {};
   roster = r.roster || [];
   renderSyncInfo();
+  renderHealth();
   renderMatches();
   renderAdvancement();
+}
+
+// Cross-check team names: every sheet pick and every API team name must
+// resolve to a canonical team, or scores will silently not credit owners.
+function renderHealth() {
+  const el = $('health');
+  const issues = [];
+  for (const p of roster) {
+    for (const t of p.picks || []) {
+      if (tierOf(t) == null) issues.push(`Sheet pick "${t}" (${p.name}) doesn't match any team — fix the sheet spelling or add an alias in lib/config.js.`);
+    }
+  }
+  if (state.meta?.unmatchedTeams?.length) {
+    issues.push(`API team names with no match: ${state.meta.unmatchedTeams.join(', ')} — add them to ALIASES in lib/config.js.`);
+  }
+  if (state.meta?.lastSyncError) issues.push(`Last sync: ${state.meta.lastSyncError}`);
+  el.innerHTML = issues.length
+    ? issues.map((i) => `<div class="health bad">⚠️ ${escapeHtml(i)}</div>`).join('')
+    : `<div class="health ok">✅ All ${roster.length} players' picks match canonical teams · no API name mismatches or sync errors reported.</div>`;
 }
 
 function renderSyncInfo() {

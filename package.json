@@ -6,7 +6,8 @@
   "description": "World Cup 2026 pick'em pool leaderboard",
   "scripts": {
     "dev": "vercel dev",
-    "test": "node test/scoring.test.mjs"
+    "test": "node test/scoring.test.mjs",
+    "check": "node scripts/check-teams.mjs"
   },
   "dependencies": {
     "@vercel/kv": "^1.0.1"

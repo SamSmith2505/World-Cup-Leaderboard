@@ -19,7 +19,8 @@
       <div class="sub" id="meta">Loading…</div>
       <nav class="tabs" role="tablist">
         <button class="tab active" data-tab="board" role="tab">Leaderboard</button>
-        <button class="tab" data-tab="teams" role="tab">Points by Team</button>
+        <button class="tab" data-tab="scores" role="tab">Game Scores</button>
+        <button class="tab" data-tab="teams" role="tab">Teams</button>
         <button class="tab" data-tab="own" role="tab">Ownership</button>
       </nav>
     </div>
@@ -27,6 +28,8 @@
 
   <main class="wrap">
     <section id="view-board">
+      <div id="pot" class="pot hidden"></div>
+
       <section id="live" class="live hidden">
         <h2><span class="live-dot"></span> Live now</h2>
         <div id="liveList" class="live-list"></div>
@@ -46,6 +49,13 @@
         Tap a row to see each team's contribution. Tiers &amp; multipliers are fixed;
         results are entered/confirmed by the admin.
       </p>
+    </section>
+
+    <section id="view-scores" class="hidden">
+      <section id="scores" class="scores" aria-live="polite">
+        <div class="loading">Loading…</div>
+      </section>
+      <p class="foot">Every match day with scores, kickoff times, and who owns each team.</p>
     </section>
 
     <section id="view-teams" class="hidden">

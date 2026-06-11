@@ -1,6 +1,6 @@
 // Public page — leaderboard + points-by-team, with throttled auto-sync.
 import { compute, computeTeamPoints, eliminatedSet } from '/lib/scoring.js';
-import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl } from '/lib/config.js';
+import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl, BUY_IN_USD } from '/lib/config.js';
 
 const boardEl = document.getElementById('board');
 const teamsEl = document.getElementById('teams');
@@ -19,12 +19,13 @@ let elimSet = new Set(); // eliminated teams (canonical names)
 let nextByTeam = {};     // canonical team -> next scheduled fixture
 
 // ---- tab switching ---------------------------------------------------------
-const VIEWS = { board: 'view-board', teams: 'view-teams', own: 'view-own' };
+const VIEWS = { board: 'view-board', scores: 'view-scores', teams: 'view-teams', own: 'view-own' };
 document.querySelectorAll('.tab').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b === btn));
     const tab = btn.dataset.tab;
     for (const [t, id] of Object.entries(VIEWS)) document.getElementById(id).classList.toggle('hidden', t !== tab);
+    if (tab === 'scores' && lastData) renderScores(true);
     if (tab === 'teams' && lastData) renderTeams();
     if (tab === 'own' && lastData) renderOwnership();
   });
@@ -47,9 +48,11 @@ async function load() {
 
     const { standings, lastUpdated } = compute(state, lastData.roster);
     render(standings);
+    renderPot(lastData.roster.length);
     renderLive(state);
     renderToday(state);
     renderMeta(lastUpdated, lastData.roster.length, lastData.rosterSource);
+    if (!document.getElementById('view-scores').classList.contains('hidden')) renderScores(false);
     if (!document.getElementById('view-teams').classList.contains('hidden')) renderTeams();
     if (!document.getElementById('view-own').classList.contains('hidden')) renderOwnership();
   } catch (e) {
@@ -61,6 +64,14 @@ function renderMeta(lastUpdated, n, source) {
   const when = lastUpdated ? new Date(lastUpdated).toLocaleString() : 'no results yet';
   const src = source === 'fallback' ? ' · roster: offline snapshot' : '';
   metaEl.textContent = `${n} players · updated: ${when}${src}`;
+}
+
+// ---- pot banner -------------------------------------------------------------
+function renderPot(n) {
+  const el = document.getElementById('pot');
+  if (!n) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  el.innerHTML = `💰 Current pot: <b>$${(n * BUY_IN_USD).toLocaleString()}</b> <span class="pot-sub">${n} players × $${BUY_IN_USD}</span>`;
 }
 
 // ---- leaderboard -----------------------------------------------------------
@@ -366,11 +377,99 @@ function renderToday(state) {
   }).join('');
 }
 
+// ---- game scores (all match days + owners) ----------------------------------
+function collectMatches(state) {
+  // Finals live in state.matches; scheduled/live fixtures in state.fixtures.
+  const all = [];
+  const seen = new Set();
+  for (const m of state.matches || []) if (m.date) { all.push({ ...m, _final: true }); seen.add(m.id); }
+  for (const f of state.fixtures || []) if (f.date && !seen.has(f.id)) all.push({ ...f, _final: false });
+  return all.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+}
+
+function dayKey(iso) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function renderScores(scrollToToday) {
+  if (!lastData) return;
+  const el = document.getElementById('scores');
+  const all = collectMatches(lastData.state);
+  if (!all.length) {
+    el.innerHTML = `<div class="loading">No matches yet — the schedule appears after the first successful API sync.</div>`;
+    return;
+  }
+  const owners = ownersByTeam();
+  const todayKey = dayKey(new Date().toISOString());
+
+  // Group by local calendar day, in order.
+  const days = [];
+  let cur = null;
+  for (const x of all) {
+    const k = dayKey(x.date);
+    if (!cur || cur.key !== k) { cur = { key: k, matches: [] }; days.push(cur); }
+    cur.matches.push(x);
+  }
+
+  el.innerHTML = days.map((d) => {
+    const label = new Date(d.matches[0].date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    const isToday = d.key === todayKey;
+    return `<section class="day${isToday ? ' is-today' : ''}" ${isToday ? 'id="day-today"' : ''}>
+      <h2 class="day-head">${escapeHtml(label)}${isToday ? ' <span class="day-today">TODAY</span>' : ''}</h2>
+      <div class="today-list">${d.matches.map((x) => scoreCard(x, owners)).join('')}</div>
+    </section>`;
+  }).join('');
+
+  if (scrollToToday) {
+    const t = document.getElementById('day-today');
+    if (t) t.scrollIntoView({ block: 'start' });
+  }
+}
+
+function scoreCard(x, owners) {
+  let cls = '', mid, tag = '';
+  if (x._final) {
+    cls = 'done'; mid = scoreHtml(x.scoreA, x.scoreB); tag = `<span class="ms-tag done">FT</span>`;
+  } else if (LIVE_STATUSES.has(x.status)) {
+    cls = 'live-match'; mid = scoreHtml(x.scoreA, x.scoreB); tag = `<span class="ms-tag live">🔴 ${liveClock(x)}</span>`;
+  } else {
+    mid = `<span class="ms-time">${new Date(x.date).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>`;
+  }
+  const round = x.round === 'group'
+    ? (x.group ? `Group ${escapeHtml(x.group)}` : 'Group stage')
+    : ({ r32: 'Round of 32', r16: 'Round of 16', qf: 'Quarterfinal', sf: 'Semifinal', final: 'Final' }[x.round] || '');
+  return `<div class="match ${cls}">
+    <div class="ms-row">
+      ${teamSide(x.teamA, 'l')}
+      ${mid}
+      ${teamSide(x.teamB, 'r')}
+    </div>
+    ${(tag || round) ? `<div class="ms-meta">${tag}${round ? ` <span class="ms-round">${round}</span>` : ''}</div>` : ''}
+    <div class="sc-owners">
+      ${ownerLine(x.teamA, owners)}
+      ${ownerLine(x.teamB, owners)}
+    </div>
+  </div>`;
+}
+
+function ownerLine(team, owners) {
+  const who = owners[canonicalTeam(team)] || [];
+  const names = who.length ? who.map(escapeHtml).join(', ') : '<span class="none">nobody</span>';
+  return `<div class="sc-own">
+    <span class="sc-own-team">${flagImg(team, 'rsub-flag')}${escapeHtml(short(team))}</span>
+    <span class="sc-own-names">${names}</span>
+  </div>`;
+}
+
 // ---- auto-sync (throttled server-side) -------------------------------------
 async function triggerSync() {
   try {
     const j = await fetch('/api/sync').then((r) => r.json());
-    if (j && j.updated) load(); // new results -> refresh
+    // Refresh when anything came back — new finals OR a fresh fixture list
+    // (previously only `updated` triggered, so the schedule never appeared
+    // until the next 60s poll).
+    if (j && (j.updated || j.upcoming)) load();
   } catch {}
 }
 

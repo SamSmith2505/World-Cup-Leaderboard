@@ -49,6 +49,16 @@ Run the scoring tests:
 npm test
 ```
 
+Check team-name health (sheet picks ↔ canonical table ↔ API-Football names —
+catches things like "Cabo Verde" vs "Cape Verde" before scores flow):
+
+```bash
+npm run check     # add APISPORTS_KEY to .env.local to also check API names
+```
+
+The admin page shows the same checks live in its **Data health** panel,
+including any error API-Football reported on the last sync.
+
 ## Deploy to Vercel
 
 1. Push this repo to GitHub and import it into Vercel (Framework preset: **Other**).
@@ -112,4 +122,5 @@ Env overrides if the competition id/season differ: `WC_LEAGUE_ID` (default `1`),
 | `index.html` / `app.js` | Public leaderboard |
 | `admin-*.html` / `admin.js` | Unlisted admin panel |
 | `scripts/dev-server.mjs` | Local dev server (no Vercel needed) |
+| `scripts/check-teams.mjs` | Team-name health check (sheet ↔ canonical ↔ API) |
 | `test/scoring.test.mjs` | Scoring engine tests |

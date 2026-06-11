@@ -77,14 +77,35 @@ export default async function handler(req, res) {
   }
 
   let fixtures;
+  let apiErrors = null;
   try {
     const url = `${API_BASE}/fixtures?league=${encodeURIComponent(LEAGUE_ID)}&season=${encodeURIComponent(SEASON)}`;
     const r = await fetch(url, { headers: { 'x-apisports-key': key } });
     const data = await r.json();
     if (!r.ok) throw new Error('API status ' + r.status);
     fixtures = data?.response || [];
+    // API-Football reports problems (bad key, plan/season limits, wrong params)
+    // INSIDE a 200 response, in `errors`. Capture them or we fail silently.
+    const errs = data?.errors;
+    if (errs && (Array.isArray(errs) ? errs.length : Object.keys(errs).length)) apiErrors = errs;
   } catch (e) {
+    try { state.meta.lastSyncError = String(e); await setState(state); } catch {}
     return res.status(200).json({ ok: false, error: String(e), message: 'API fetch failed; existing data unchanged.' });
+  }
+
+  const now = new Date().toISOString();
+
+  // Zero fixtures = nothing usable came back (most often an `errors` payload).
+  // Keep existing data, record why so the admin page can show it, and still
+  // stamp lastSyncAt so the viewer-throttle keeps protecting the quota.
+  if (!fixtures.length) {
+    const reason = apiErrors
+      ? 'API-Football errors: ' + JSON.stringify(apiErrors)
+      : `API returned 0 fixtures for league=${LEAGUE_ID} season=${SEASON} (check WC_LEAGUE_ID / WC_SEASON and plan coverage)`;
+    state.meta.lastSyncAt = now;
+    state.meta.lastSyncError = reason;
+    await setState(state);
+    return res.status(200).json({ ok: false, error: reason, totalFixturesSeen: 0, message: 'No fixtures returned; existing data unchanged.' });
   }
 
   const apiMatches = [];
@@ -132,11 +153,14 @@ export default async function handler(req, res) {
   const manualKeys = new Set(manual.map(fixtureKey));
   const freshApi = apiMatches.filter((m) => !manualKeys.has(fixtureKey(m)));
 
-  const now = new Date().toISOString();
   state.matches = [...manual, ...freshApi];
   state.fixtures = upcoming; // refreshed wholesale each sync
   state.meta.lastSyncAt = now;
   state.meta.lastUpdated = now;
+  // Data-health info for the admin page: API names that didn't canonicalize
+  // (spelling drift like "Cabo Verde" vs "Cape Verde") + any soft API errors.
+  state.meta.unmatchedTeams = [...unmatched];
+  state.meta.lastSyncError = apiErrors ? 'API-Football errors: ' + JSON.stringify(apiErrors) : null;
   await setState(state);
   await rollDailySnapshot(state, now);
 

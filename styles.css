@@ -64,6 +64,17 @@ main { padding-top: 14px; }
 .mover .m-name { font-weight: 600; }
 .mover .m-pts { color: var(--muted); margin-left: auto; font-size: 13px; }
 
+/* Pot banner */
+.pot {
+  background: linear-gradient(120deg, rgba(255, 198, 43, .16), rgba(31, 184, 90, .10));
+  border: 1px solid rgba(255, 198, 43, .45);
+  border-radius: 14px; padding: 12px 16px; margin-bottom: 14px;
+  text-align: center; font-family: var(--font-display); font-weight: 600; font-size: 15px;
+  box-shadow: 0 4px 22px rgba(255, 198, 43, .10);
+}
+.pot b { color: var(--gold); font-size: 23px; font-weight: 700; margin: 0 2px; }
+.pot-sub { display: block; color: var(--muted); font-family: var(--font-body); font-weight: 500; font-size: 12px; margin-top: 2px; }
+
 .board { display: flex; flex-direction: column; gap: 10px; }
 .loading { color: var(--muted); padding: 28px 4px; text-align: center; }
 
@@ -134,6 +145,8 @@ main { padding-top: 14px; }
 }
 .tab { font-family: var(--font-display); letter-spacing: .2px; transition: all .15s ease; }
 .tab.active { background: var(--green); color: #06140b; border-color: transparent; box-shadow: 0 4px 16px rgba(31, 184, 90, .3); }
+/* 4 tabs need to fit on a phone */
+@media (max-width: 480px) { .tab { font-size: 12px; padding: 9px 4px; } }
 
 /* Points by team */
 .teams-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -239,6 +252,32 @@ table.own thead th { position: sticky; top: 0; background: var(--card2); z-index
 .own-cnt-h { color: var(--muted); }
 tr.own-elim { opacity: .72; }
 tr.own-elim .own-tname { text-decoration: line-through; opacity: .7; }
+
+/* Game scores tab */
+.scores { display: flex; flex-direction: column; gap: 16px; }
+.day { scroll-margin-top: 150px; }
+.day-head {
+  margin: 0 0 8px; font-family: var(--font-display); font-size: 14px;
+  color: var(--muted); font-weight: 600; display: flex; align-items: center; gap: 8px;
+}
+.day.is-today .day-head { color: var(--text); }
+.day-today {
+  font-size: 10px; font-weight: 800; letter-spacing: .6px; padding: 2px 7px;
+  border-radius: 6px; background: var(--green); color: #06140b;
+}
+.day.is-today .match { border-color: rgba(31, 184, 90, .35); }
+.ms-round { font-size: 11px; color: var(--muted); font-weight: 600; }
+.sc-owners { margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; }
+.sc-own { display: flex; gap: 10px; font-size: 12px; align-items: baseline; }
+.sc-own-team { flex: none; width: 86px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+.sc-own-names { color: var(--muted); min-width: 0; }
+.sc-own-names .none { opacity: .5; }
+
+/* Admin data health */
+.health { font-size: 13px; padding: 4px 0; }
+.health.bad { color: var(--gold); }
+.health.bad + .health.bad { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 8px; }
+.health.ok { color: var(--green); }
 
 /* Live + today's matches */
 .live, .today { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
