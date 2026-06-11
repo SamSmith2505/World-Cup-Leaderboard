@@ -1,20 +1,22 @@
 name: Sync scores
 
-# Pings the app's /api/sync endpoint so World Cup results auto-update without
-# needing a paid Vercel cron.
+# Pings the app's /api/sync endpoint as a BACKSTOP so results update even when
+# nobody has the page open. The fast live-refresh during matches comes from the
+# page itself (it nudges /api/sync ~every 60s while open; the server throttles
+# real API calls to ~90s). This cron just catches finals when no one's watching.
 #
-# RATE LIMIT: API-Football free tier = 100 requests/day.
-#   */20 = ~72 calls/day (current — comfortable margin)
-#   */15 = ~96 calls/day (tighter; little headroom for manual "Sync now" clicks)
-# Adjust the cron below to taste.
+# NOTE: GitHub Actions cron has a 5-minute MINIMUM and is best-effort (runs can
+# be delayed or dropped under load) — so */5 is as fast as it gets here, and it
+# won't actually fire every 1-2 min even if you ask. For rock-solid sub-minute
+# pings, point https://cron-job.org at the same force URL instead.
 #
-# NOTE: GitHub's scheduled runs are best-effort and can be delayed under load.
-# If you need rock-solid timing, use https://cron-job.org instead
-# (point it at the same URL).
+# RATE LIMIT: */5 ≈ 288 calls/day from this cron; viewer-driven syncs add at
+# most ~960/day (one per 90s throttle window). Fine for any paid API-Football
+# plan. If you're back on the free 100/day tier, raise this to */20.
 
 on:
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: {}
 
 jobs:

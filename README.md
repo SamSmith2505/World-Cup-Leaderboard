@@ -93,14 +93,20 @@ To turn it on:
 2. Add `APISPORTS_KEY` to Vercel env vars; redeploy.
 
 How updates are triggered:
-- **GitHub Actions** (`.github/workflows/sync.yml`) pings `/api/sync?force=1` every
-  15 min. Free, no Vercel upgrade needed. Edit the cron to `*/20` for more rate-limit
-  headroom (see the rate-limit note in that file).
-- **Page visits** also nudge a sync, but the server throttles non-forced calls to
-  ~15 min so viewers don't burn extra API quota on top of the cron.
-- A daily Vercel cron is kept as a backstop.
+- **Open pages** drive the live refresh: while the page is open it nudges
+  `/api/sync` ~every 60s, and the server throttles real API calls to ~90s
+  (`THROTTLE_MS` in `api/sync.js`). The throttle collapses all viewers into at
+  most one API call per window, so quota is bounded by the throttle, not by how
+  many people are watching.
+- **GitHub Actions** (`.github/workflows/sync.yml`) pings `/api/sync?force=1` as
+  a backstop so finals still land when nobody's watching. GitHub cron has a
+  5-minute floor and is best-effort, so it's set to `*/5` — it is NOT the live
+  path.
+- A daily Vercel cron is kept as a further backstop.
 
-Rate limit: API-Football free = 100 req/day. `*/15` ≈ 96/day (tight), `*/20` ≈ 72/day.
+Rate limit: with the ~90s throttle, viewer-driven syncs cost ≤ ~960 req/day and
+the `*/5` cron adds ~288/day — comfortable on a paid API-Football plan. Back on
+the free 100/day tier? Raise `THROTTLE_MS` and the GitHub cron to `*/20`.
 Hitting the cap just skips an update; nothing breaks.
 
 Optional hardening: set `SYNC_SECRET` in Vercel **and** as a GitHub repo secret of the

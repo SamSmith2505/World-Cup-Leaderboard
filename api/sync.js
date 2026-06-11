@@ -16,9 +16,12 @@ import { fixtureKey, compute } from '../lib/scoring.js';
 import { rosterFromCSV, ROSTER_FALLBACK } from '../lib/roster.js';
 
 // Throttle for NON-forced calls (page visits). The cron uses force=1 and
-// bypasses this; keeping it ~= the cron interval means viewer-triggered syncs
-// don't add API calls on top of the cron.
-const THROTTLE_MS = 20 * 60 * 1000;
+// bypasses this. This is also what sets the live-refresh rate: while anyone has
+// the page open it nudges /api/sync every ~60s, and this throttle collapses all
+// viewers into at most ONE real API call per window — so quota is bounded by
+// the throttle, not by how many people are watching. 90s gives near-live
+// updates during matches while staying well within a paid plan's daily cap.
+const THROTTLE_MS = 90 * 1000;
 const API_BASE = process.env.API_FOOTBALL_BASE || 'https://v3.football.api-sports.io';
 const LEAGUE_ID = process.env.WC_LEAGUE_ID || '1'; // API-Football: World Cup = 1
 const SEASON = process.env.WC_SEASON || '2026';

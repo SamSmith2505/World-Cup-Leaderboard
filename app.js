@@ -500,5 +500,5 @@ function fmt(n) { const v = Number(n) || 0; return Number.isInteger(v) ? String(
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
 load().then(triggerSync);
-setInterval(load, 60_000);        // refresh view
-setInterval(triggerSync, 300_000); // nudge a sync every 5 min (server throttles)
+setInterval(load, 30_000);        // refresh view every 30s
+setInterval(triggerSync, 60_000); // nudge a sync every 60s (server throttles to ~90s)
