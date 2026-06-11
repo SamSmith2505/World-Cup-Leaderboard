@@ -206,6 +206,21 @@ input[type=number] { width: 60px; }
 
 /* Team ownership matrix */
 .own-note { margin: 0 0 10px; font-size: 12px; }
+/* Break the matrix out of the narrow 680px column so more player columns fit.
+   It stays centered, capped near full viewport width, and still scrolls
+   horizontally when the roster outgrows even that. */
+#view-own {
+  width: calc(100vw - 28px);
+  max-width: 1400px;
+  margin-left: calc(50% - 50vw + 14px); /* escape .wrap, keep 14px gutters */
+}
+@media (min-width: 1429px) {
+  #view-own { margin-left: calc((680px - 28px - 1400px) / 2); } /* re-center under the cap */
+}
+/* On mobile the wrap is already near-full-width; just tighten the gutters. */
+@media (max-width: 480px) {
+  #view-own { width: calc(100vw - 12px); margin-left: calc(50% - 50vw + 6px); }
+}
 .own-scroll { overflow: auto; max-height: calc(100dvh - 200px); -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
 table.own { border-collapse: separate; border-spacing: 0; font-size: 13px; width: auto; }
 table.own th, table.own td { border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); white-space: nowrap; }
