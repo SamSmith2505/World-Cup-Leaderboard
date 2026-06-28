@@ -5,7 +5,9 @@
 // ----------------------------------------------------------------------------
 // - Auto-pulled matches are source:'api'. Manual admin entries (source:'manual')
 //   ALWAYS win: an API fixture is skipped if a manual entry exists for it.
-// - Advancement bonuses are NOT auto-derived — they stay a manual confirm step.
+// - Advancement bonuses are auto-derived at SCORING time from the knockout
+//   bracket (see derivedAdvancement in lib/scoring.js), not here. The admin can
+//   still override any team's stage.
 // - Server-side throttle keeps us well under the free 100-req/day limit even if
 //   many people open the page at once.
 // ============================================================================

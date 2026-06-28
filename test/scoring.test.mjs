@@ -52,13 +52,18 @@ ok('draw awards 1 each + goals', () => {
   assert.equal(teams['Norway'].total, 6); // raw 3 x T2(2.0)
 });
 
-ok('knockout penalty winner gets the win', () => {
-  assert.equal(teams['Spain'].matchPts, 0); // lost on pens
-  assert.equal(teams['Spain'].total, 0);
+ok('knockout penalty loser: no win pts, but keeps the R32 advance bonus', () => {
+  assert.equal(teams['Spain'].matchPts, 0);                 // lost on pens -> no win points
+  assert.equal(teams['Spain'].advBonus, cumulativeBonus('r32')); // but it did reach the R32
+  assert.equal(teams['Spain'].total, 5);                    // 5 raw x T1 (1.0)
 });
 
-ok('non-final match is ignored', () => {
-  assert.equal(teams['Brazil'], undefined);
+ok('non-final match adds no match pts/goals, but bracket placement still advances', () => {
+  // Brazil/England are named in the (not-yet-played) final fixture: no match
+  // points or goals, but being in the final = reached-final advancement.
+  assert.equal(teams['Brazil'].matchPts, 0);
+  assert.equal(teams['Brazil'].goals, 0);
+  assert.equal(teams['Brazil'].advBonus, cumulativeBonus('final')); // 43
 });
 
 ok('advancement-only team scores via multiplier', () => {
@@ -168,6 +173,38 @@ ok('a final match for a pairing suppresses any stale live fixture', () => {
   assert.equal(t['South Korea'].matchPts, 3);
   assert.equal(t['South Korea'].raw, 5);
   assert.ok(!t['South Korea'].live);
+});
+
+ok('advancement auto-derives live from the knockout bracket', () => {
+  const s = {
+    matches: [
+      { round: 'r32', teamA: 'South Africa', teamB: 'Canada', scoreA: 0, scoreB: 1, final: true }, // both reached R32
+      { round: 'final', teamA: 'Spain', teamB: 'France', scoreA: 2, scoreB: 1, final: true },        // Spain champion
+    ],
+    fixtures: [
+      { round: 'r32', teamA: 'Brazil', teamB: 'Japan', status: 'NS' },        // scheduled R32 still = out of group
+      { round: 'qf', teamA: 'Germany', teamB: 'Winner R16-3', status: 'NS' }, // Germany reached QF; placeholder skipped
+    ],
+    advancement: {},
+  };
+  const t = computeTeamPoints(s);
+  assert.equal(t['South Africa'].advBonus, cumulativeBonus('r32'));   // 5 — advanced even though it LOST in R32
+  assert.equal(t['Canada'].advBonus, cumulativeBonus('r32'));
+  assert.equal(t['Brazil'].advBonus, cumulativeBonus('r32'));         // scheduled R32 counts
+  assert.equal(t['Germany'].advBonus, cumulativeBonus('qf'));         // 13
+  assert.equal(t['Spain'].advBonus, cumulativeBonus('champion'));     // 67 — won the final
+  assert.equal(t['France'].advBonus, cumulativeBonus('final'));       // 43 — reached final, lost
+  assert.equal(t['Winner R16-3'], undefined);                         // placeholder not credited
+});
+
+ok('manual advancement overrides the auto-derived stage', () => {
+  const s = {
+    matches: [{ round: 'r32', teamA: 'Spain', teamB: 'France', scoreA: 1, scoreB: 0, final: true }],
+    advancement: { Spain: 'champion' }, // admin override
+  };
+  const t = computeTeamPoints(s);
+  assert.equal(t['Spain'].advBonus, cumulativeBonus('champion')); // manual wins
+  assert.equal(t['France'].advBonus, cumulativeBonus('r32'));     // auto still applies to the other team
 });
 
 console.log(`\n${pass} tests passed ✓`);

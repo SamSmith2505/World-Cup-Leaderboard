@@ -74,8 +74,9 @@ including any error API-Football reported on the last sync.
 2. **Add / edit matches** — pick the round, both teams, the score, tick **final**.
    For a knockout decided on penalties, set the winner in the "pens?" dropdown.
    Every manual entry is flagged `manual` and takes precedence over any API data.
-3. **Advancement** — for each picked team, set the furthest stage reached
-   (cumulative: choosing "Reached Semifinal" awards R32 + QF + SF bonuses).
+3. **Advancement** — auto-fills live from the knockout bracket (a team named in
+   the R32 gets the out-of-group bonus, bumping up through QF/SF/Final/Champion
+   as results come in; cumulative). You only touch a dropdown to **override**.
 4. **Save all changes** → live for everyone.
 5. (Optional) **Snapshot "today"** to freeze current standings so the public page's
    "biggest movers" compares against that baseline.

@@ -1,6 +1,6 @@
 // Admin panel — edit matches & advancement, persist via /api/state.
 import { ROUNDS, STAGES, ALL_TEAMS, canonicalTeam, tierOf } from '/lib/config.js';
-import { compute } from '/lib/scoring.js';
+import { compute, derivedAdvancement } from '/lib/scoring.js';
 
 const $ = (id) => document.getElementById(id);
 let state = { matches: [], advancement: {}, meta: {} };
@@ -138,14 +138,18 @@ function renderAdvancement() {
   for (const p of roster) for (const t of p.picks || []) picked.add(canonicalTeam(t));
   const teams = [...picked].sort((a, b) => (tierOf(a) || 9) - (tierOf(b) || 9) || a.localeCompare(b));
   if (!teams.length) { c.innerHTML = '<p class="muted">No picked teams yet.</p>'; return; }
+  // Stages now auto-fill from the live bracket; manual selection overrides.
+  const auto = derivedAdvancement(state);
   c.innerHTML = '';
   for (const t of teams) {
-    const cur = state.advancement[t] || 'none';
+    const manual = state.advancement[t];
+    const cur = manual || auto[t] || 'none';
+    const autoTag = (!manual && auto[t] && auto[t] !== 'none') ? ' <span class="flag2">auto</span>' : '';
     const row = document.createElement('div');
     row.className = 'adv-row';
     const opts = STAGES.map((s) => `<option value="${s.key}" ${s.key === cur ? 'selected' : ''}>${s.label}</option>`).join('');
     const isOut = !!state.eliminated[t];
-    row.innerHTML = `<span>${escapeHtml(t)} <span class="muted">· T${tierOf(t) ?? '?'}</span></span>
+    row.innerHTML = `<span>${escapeHtml(t)} <span class="muted">· T${tierOf(t) ?? '?'}</span>${autoTag}</span>
       <span class="adv-controls">
         <label class="muted"><input type="checkbox" class="elimchk" ${isOut ? 'checked' : ''}/> out</label>
         <select data-team="${attr(t)}">${opts}</select>
