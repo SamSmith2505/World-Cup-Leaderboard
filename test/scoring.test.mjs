@@ -252,4 +252,30 @@ ok('group winner bonus waits until the group is actually complete', () => {
   assert.ok(!t['Mexico'].groupWinner); // only one game played -> group undecided
 });
 
+ok('group-stage non-advancers are eliminated once the knockout bracket is set', () => {
+  const s = {
+    matches: [
+      { round: 'group', group: 'A', teamA: 'South Africa', teamB: 'Czechia', scoreA: 0, scoreB: 1, final: true },
+    ],
+    fixtures: [
+      { round: 'r32', teamA: 'Mexico', teamB: 'Japan', status: 'NS' }, // bracket set -> Mexico & Japan advanced
+    ],
+  };
+  const e = eliminatedSet(s);
+  assert.ok(e.has('South Africa')); // played the group, didn't reach R32 -> out
+  assert.ok(e.has('Czechia'));      // ditto
+  assert.ok(!e.has('Mexico'));      // advanced
+  assert.ok(!e.has('Japan'));       // advanced
+});
+
+ok('nobody is group-eliminated before the bracket exists', () => {
+  const s = {
+    matches: [{ round: 'group', group: 'A', teamA: 'South Africa', teamB: 'Czechia', scoreA: 0, scoreB: 1, final: true }],
+    fixtures: [],
+  };
+  const e = eliminatedSet(s);
+  assert.ok(!e.has('South Africa')); // group stage still in progress -> not greyed
+  assert.ok(!e.has('Czechia'));
+});
+
 console.log(`\n${pass} tests passed ✓`);
