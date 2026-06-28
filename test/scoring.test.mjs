@@ -17,11 +17,11 @@ ok('tier lookup uses canonical table, ignores sheet column', () => {
 
 ok('cumulative advancement bonuses stack', () => {
   assert.equal(cumulativeBonus('none'), 0);
-  assert.equal(cumulativeBonus('r32'), 5);
-  assert.equal(cumulativeBonus('qf'), 13);     // 5+8
-  assert.equal(cumulativeBonus('sf'), 25);     // 5+8+12
-  assert.equal(cumulativeBonus('final'), 43);  // +18
-  assert.equal(cumulativeBonus('champion'), 67); // +24
+  assert.equal(cumulativeBonus('r32'), 3);     // out of group
+  assert.equal(cumulativeBonus('qf'), 11);     // 3+8
+  assert.equal(cumulativeBonus('sf'), 23);     // 3+8+12
+  assert.equal(cumulativeBonus('final'), 41);  // +18
+  assert.equal(cumulativeBonus('champion'), 65); // +24
 });
 
 const state = {
@@ -38,12 +38,12 @@ const state = {
 const teams = computeTeamPoints(state);
 
 ok('group win + goals', () => {
-  // Argentina group: win 3 + 3 goals = 6 ; r32: win 5 + 0 goals = 5 ; champion bonus 67
+  // Argentina group: win 3 + 3 goals = 6 ; r32: win 5 + 0 goals = 5 ; champion bonus 65
   assert.equal(teams['Argentina'].matchPts, 8);
   assert.equal(teams['Argentina'].goals, 3);
-  assert.equal(teams['Argentina'].advBonus, 67);
-  assert.equal(teams['Argentina'].raw, 78);
-  assert.equal(teams['Argentina'].total, 78); // T1 x1.0
+  assert.equal(teams['Argentina'].advBonus, 65);
+  assert.equal(teams['Argentina'].raw, 76);
+  assert.equal(teams['Argentina'].total, 76); // T1 x1.0
 });
 
 ok('draw awards 1 each + goals', () => {
@@ -55,7 +55,7 @@ ok('draw awards 1 each + goals', () => {
 ok('knockout penalty loser: no win pts, but keeps the R32 advance bonus', () => {
   assert.equal(teams['Spain'].matchPts, 0);                 // lost on pens -> no win points
   assert.equal(teams['Spain'].advBonus, cumulativeBonus('r32')); // but it did reach the R32
-  assert.equal(teams['Spain'].total, 5);                    // 5 raw x T1 (1.0)
+  assert.equal(teams['Spain'].total, 3);                    // 3 raw x T1 (1.0)
 });
 
 ok('non-final match adds no match pts/goals, but bracket placement still advances', () => {
@@ -67,9 +67,9 @@ ok('non-final match adds no match pts/goals, but bracket placement still advance
 });
 
 ok('advancement-only team scores via multiplier', () => {
-  // Cape Verde: r32 bonus 5, no matches, T5 x3.5 = 17.5
-  assert.equal(teams['Cape Verde'].raw, 5);
-  assert.equal(teams['Cape Verde'].total, 17.5);
+  // Cape Verde: r32 bonus 3, no matches, T5 x3.5 = 10.5
+  assert.equal(teams['Cape Verde'].raw, 3);
+  assert.equal(teams['Cape Verde'].total, 10.5);
 });
 
 const roster = [
@@ -81,8 +81,8 @@ const { standings } = compute(state, roster);
 ok('shared team credits all owners + dedupe', () => {
   const alice = standings.find((s) => s.name === 'Alice');
   const bob = standings.find((s) => s.name === 'Bob');
-  assert.equal(alice.total, 84);    // 78 + 6 (Argentina counted once)
-  assert.equal(bob.total, 95.5);    // 78 + 17.5
+  assert.equal(alice.total, 82);    // 76 + 6 (Argentina counted once)
+  assert.equal(bob.total, 86.5);    // 76 + 10.5
   assert.equal(alice.breakdown.length, 2);
 });
 
@@ -99,7 +99,7 @@ ok('per-source breakdown splits points correctly', () => {
   assert.equal(a.groupGoals.pts, 3); assert.equal(a.groupGoals.n, 3);
   assert.equal(a.koWin.pts, 5);     assert.equal(a.koWin.n, 1);
   assert.equal(a.koGoals.pts, 0);
-  assert.equal(a.adv.pts, 67);
+  assert.equal(a.adv.pts, 65);
   const n = teams['Norway'].src;
   assert.equal(n.groupDraw.pts, 1); assert.equal(n.groupGoals.pts, 2);
 });
@@ -205,6 +205,51 @@ ok('manual advancement overrides the auto-derived stage', () => {
   const t = computeTeamPoints(s);
   assert.equal(t['Spain'].advBonus, cumulativeBonus('champion')); // manual wins
   assert.equal(t['France'].advBonus, cumulativeBonus('r32'));     // auto still applies to the other team
+});
+
+ok('group winner: 1st in a completed group gets +5 (tier-scaled); others get nothing', () => {
+  const s = {
+    matches: [
+      { round: 'group', group: 'A', teamA: 'Mexico', teamB: 'South Africa', scoreA: 2, scoreB: 0, final: true },
+      { round: 'group', group: 'A', teamA: 'South Korea', teamB: 'Czechia', scoreA: 1, scoreB: 1, final: true },
+      { round: 'group', group: 'A', teamA: 'Mexico', teamB: 'South Korea', scoreA: 3, scoreB: 1, final: true },
+      { round: 'group', group: 'A', teamA: 'Czechia', teamB: 'South Africa', scoreA: 0, scoreB: 2, final: true },
+      { round: 'group', group: 'A', teamA: 'Mexico', teamB: 'Czechia', scoreA: 1, scoreB: 0, final: true },
+      { round: 'group', group: 'A', teamA: 'South Africa', teamB: 'South Korea', scoreA: 1, scoreB: 1, final: true },
+    ],
+    advancement: {},
+  };
+  const t = computeTeamPoints(s);
+  assert.equal(t['Mexico'].groupWinner, true);
+  assert.equal(t['Mexico'].src.adv.pts, 5);   // group-winner bonus (no knockout fixtures here)
+  assert.ok(!t['South Africa'].groupWinner);  // 2nd
+  assert.equal(t['South Africa'].src.adv.pts, 0);
+});
+
+ok('group winner + advancing out of group stack to 8 (3 + 5) before the multiplier', () => {
+  const s = {
+    matches: [
+      { round: 'group', group: 'A', teamA: 'Mexico', teamB: 'South Africa', scoreA: 1, scoreB: 0, final: true },
+      { round: 'group', group: 'A', teamA: 'Mexico', teamB: 'South Korea', scoreA: 1, scoreB: 0, final: true },
+      { round: 'group', group: 'A', teamA: 'Mexico', teamB: 'Czechia', scoreA: 1, scoreB: 0, final: true },
+      { round: 'group', group: 'A', teamA: 'South Africa', teamB: 'South Korea', scoreA: 0, scoreB: 0, final: true },
+      { round: 'group', group: 'A', teamA: 'South Africa', teamB: 'Czechia', scoreA: 0, scoreB: 0, final: true },
+      { round: 'group', group: 'A', teamA: 'South Korea', teamB: 'Czechia', scoreA: 0, scoreB: 0, final: true },
+    ],
+    fixtures: [{ round: 'r32', teamA: 'Mexico', teamB: 'Japan', status: 'NS' }], // Mexico also advanced
+    advancement: {},
+  };
+  const t = computeTeamPoints(s);
+  assert.equal(t['Mexico'].advBonus, 8); // out-of-group 3 + group-winner 5
+});
+
+ok('group winner bonus waits until the group is actually complete', () => {
+  const s = {
+    matches: [{ round: 'group', group: 'A', teamA: 'Mexico', teamB: 'South Africa', scoreA: 2, scoreB: 0, final: true }],
+    advancement: {},
+  };
+  const t = computeTeamPoints(s);
+  assert.ok(!t['Mexico'].groupWinner); // only one game played -> group undecided
 });
 
 console.log(`\n${pass} tests passed ✓`);

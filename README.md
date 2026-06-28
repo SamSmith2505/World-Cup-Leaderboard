@@ -27,7 +27,9 @@ Manual-first (you enter results), with the roster pulled live from a Google Shee
 
 - `TIER_MULTIPLIERS` — tier → multiplier.
 - `SCORING` — group/knockout win/draw/goal points.
-- `STAGES` — cumulative advancement bonuses (R32 → Champion).
+- `STAGES` — cumulative advancement bonuses (out of group 3 · QF 8 · SF 12 ·
+  Final 18 · Champion 24) and `GROUP_WINNER_BONUS` (5, for finishing 1st in a
+  group — credited automatically on top of the advancement bonus).
 - `TIERS` — the canonical team → tier table (single source of truth).
   - Cape Verde is in **Tier 5**; Saudi Arabia in **Tier 6**. Adjust if the field changes.
 - `ROSTER_CSV_URL` — the published Google Sheet CSV.
@@ -77,6 +79,7 @@ including any error API-Football reported on the last sync.
 3. **Advancement** — auto-fills live from the knockout bracket (a team named in
    the R32 gets the out-of-group bonus, bumping up through QF/SF/Final/Champion
    as results come in; cumulative). You only touch a dropdown to **override**.
+   The +5 group-winner bonus is also automatic (1st in a completed group).
 4. **Save all changes** → live for everyone.
 5. (Optional) **Snapshot "today"** to freeze current standings so the public page's
    "biggest movers" compares against that baseline.

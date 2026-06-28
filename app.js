@@ -142,7 +142,7 @@ function breakdownTable(breakdown) {
     const tr = document.createElement('tr');
     const mult = TIER_MULTIPLIERS[tp.tier] ?? tp.multiplier ?? 1;
     tr.innerHTML = `
-      <td class="${isEliminated(tp.team) ? 'elim-cell' : ''}">${flagImg(tp.team, 'bd-flag')}${escapeHtml(tp.team)}${elimMark(tp.team)}${stageTag(tp.stage)}${tp.live ? ' <span class="live-pts" title="Playing live — goals count as they happen">🔴 live</span>' : ''}</td>
+      <td class="${isEliminated(tp.team) ? 'elim-cell' : ''}">${flagImg(tp.team, 'bd-flag')}${escapeHtml(tp.team)}${elimMark(tp.team)}${gwinTag(tp.groupWinner)}${stageTag(tp.stage)}${tp.live ? ' <span class="live-pts" title="Playing live — goals count as they happen">🔴 live</span>' : ''}</td>
       <td>T${tp.tier ?? '?'}</td>
       <td class="num" title="match ${fmt(tp.matchPts)} + goals ${fmt(tp.goals)} + bonus ${fmt(tp.advBonus)}">${fmt(tp.raw)}</td>
       <td class="num">${mult}</td>
@@ -156,6 +156,10 @@ function stageTag(stage) {
   if (!stage || stage === 'none') return '';
   const map = { r32: 'R32', qf: 'QF', sf: 'SF', final: 'Final', champion: '🏆' };
   return ` <span class="tag">${map[stage] || stage}</span>`;
+}
+
+function gwinTag(isWinner) {
+  return isWinner ? ' <span class="tag gwin" title="Won its group (+5 × tier)">🥇 Grp</span>' : '';
 }
 
 // ---- points by team --------------------------------------------------------
@@ -251,7 +255,7 @@ function teamCard(r) {
   card.innerHTML = `
     <div class="tc-head">
       ${flagImg(r.team, 'tc-flag')}
-      <span class="tc-name">${escapeHtml(r.team)}${elimMark(r.team)}${stageTag(r.stage)}</span>
+      <span class="tc-name">${escapeHtml(r.team)}${elimMark(r.team)}${gwinTag(r.groupWinner)}${stageTag(r.stage)}</span>
       ${r.group ? `<span class="tc-grp">Grp ${escapeHtml(r.group)}</span>` : ''}
       <span class="tc-tier tier-${r.tier}">T${r.tier ?? '?'}</span>
       <span class="tc-total">${fmt(r.total)}</span>

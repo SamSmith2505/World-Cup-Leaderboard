@@ -134,6 +134,7 @@ main { padding-top: 14px; }
 .bd .strong { font-weight: 700; }
 .bd-flag { width: 21px; height: 14px; display: inline-block; vertical-align: -2px; margin-right: 7px; }
 .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 6px; background: var(--green); color: #06140b; font-weight: 700; vertical-align: middle; }
+.tag.gwin { background: var(--gold); color: #3a2c00; }
 
 .foot { color: var(--muted); font-size: 12px; text-align: center; margin: 18px 0 28px; }
 .hidden { display: none; }
