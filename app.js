@@ -101,6 +101,7 @@ function rowEl(row) {
     <div class="rcol">
       <span class="name">${row.rank === 1 ? '👑 ' : ''}${escapeHtml(row.name)}</span>
       ${sub}
+      ${teamsLeftLine(row.breakdown)}
     </div>
     <span class="pts">${fmt(row.total)}</span>
     <span class="chev" aria-hidden="true">▸</span>`;
@@ -113,6 +114,17 @@ function rowEl(row) {
   body.appendChild(breakdownTable(row.breakdown));
   wrap.appendChild(head); wrap.appendChild(body);
   return wrap;
+}
+
+// Compact "teams still alive" line shown under each player's name on the board.
+function teamsLeftLine(breakdown) {
+  if (!breakdown || !breakdown.length) return '';
+  const alive = breakdown.filter((tp) => !isEliminated(tp.team));
+  if (!alive.length) return `<div class="rteams none">✕ all teams eliminated</div>`;
+  const chips = alive
+    .map((tp) => `<span class="rteam">${flagImg(tp.team, 'rsub-flag')}${escapeHtml(short(tp.team))}</span>`)
+    .join('');
+  return `<div class="rteams"><span class="rteams-lbl">Left ${alive.length}</span>${chips}</div>`;
 }
 
 function gainedToday(name, currentTotal) {
