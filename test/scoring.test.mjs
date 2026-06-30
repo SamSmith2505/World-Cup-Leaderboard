@@ -1,6 +1,6 @@
 // Run: node test/scoring.test.mjs
 import assert from 'node:assert/strict';
-import { compute, computeTeamPoints, eliminatedSet } from '../lib/scoring.js';
+import { compute, computeTeamPoints, eliminatedSet, derivedAdvancement } from '../lib/scoring.js';
 import { cumulativeBonus, tierOf } from '../lib/config.js';
 
 let pass = 0;
@@ -250,6 +250,28 @@ ok('group winner bonus waits until the group is actually complete', () => {
   };
   const t = computeTeamPoints(s);
   assert.ok(!t['Mexico'].groupWinner); // only one game played -> group undecided
+});
+
+ok('winning a knockout match advances the stage the moment it is final', () => {
+  const s = {
+    matches: [
+      // Morocco won its R32 game -> now reached the R16 (no extra bonus, but the
+      // stage/tag must move off R32).
+      { round: 'r32', teamA: 'Scotland', teamB: 'Morocco', scoreA: 0, scoreB: 1, final: true },
+      // Won an R16 game -> reached the QF (and earns the +8 QF bonus).
+      { round: 'r16', teamA: 'Spain', teamB: 'Mexico', scoreA: 2, scoreB: 0, final: true },
+    ],
+    advancement: {},
+  };
+  const adv = derivedAdvancement(s);
+  assert.equal(adv['Morocco'], 'r16');   // advanced past R32
+  assert.equal(adv['Scotland'], 'r32');  // lost in R32, stays
+  assert.equal(adv['Spain'], 'qf');      // won R16 -> reached QF
+  assert.equal(adv['Mexico'], 'r16');    // lost in R16, stays
+  const t = computeTeamPoints(s);
+  assert.equal(t['Morocco'].advBonus, cumulativeBonus('r16')); // 3 (R16 adds nothing)
+  assert.equal(t['Morocco'].advBonus, 3);
+  assert.equal(t['Spain'].advBonus, cumulativeBonus('qf'));     // 11
 });
 
 ok('group-stage non-advancers are eliminated once the knockout bracket is set', () => {

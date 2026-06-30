@@ -166,7 +166,7 @@ function breakdownTable(breakdown) {
 
 function stageTag(stage) {
   if (!stage || stage === 'none') return '';
-  const map = { r32: 'R32', qf: 'QF', sf: 'SF', final: 'Final', champion: '🏆' };
+  const map = { r32: 'R32', r16: 'R16', qf: 'QF', sf: 'SF', final: 'Final', champion: '🏆' };
   return ` <span class="tag">${map[stage] || stage}</span>`;
 }
 
