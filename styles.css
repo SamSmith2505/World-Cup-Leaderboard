@@ -82,6 +82,10 @@ main { padding-top: 14px; }
 .row:hover { border-color: rgba(31, 184, 90, .4); }
 .row.open { border-color: rgba(31, 184, 90, .5); }
 .row.champ { border-color: rgba(255, 198, 43, .55); box-shadow: 0 0 0 1px rgba(255, 198, 43, .22), 0 6px 26px rgba(255, 198, 43, .12); }
+/* Mathematically out of the contest — subtle recede, still readable */
+.row.dead { opacity: .58; }
+.row.dead .pts { color: var(--muted); }
+.dead-tag { font-weight: 700; color: var(--muted); text-transform: uppercase; font-size: 9px; letter-spacing: .4px; border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
 
 /* Best/worst sub-line + max points */
 .rcol { min-width: 0; display: flex; flex-direction: column; gap: 3px; }

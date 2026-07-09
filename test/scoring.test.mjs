@@ -1,6 +1,6 @@
 // Run: node test/scoring.test.mjs
 import assert from 'node:assert/strict';
-import { compute, computeTeamPoints, eliminatedSet, derivedAdvancement } from '../lib/scoring.js';
+import { compute, computeTeamPoints, eliminatedSet, derivedAdvancement, contestEliminated } from '../lib/scoring.js';
 import { cumulativeBonus, tierOf } from '../lib/config.js';
 
 let pass = 0;
@@ -298,6 +298,41 @@ ok('nobody is group-eliminated before the bracket exists', () => {
   const e = eliminatedSet(s);
   assert.ok(!e.has('South Africa')); // group stage still in progress -> not greyed
   assert.ok(!e.has('Czechia'));
+});
+
+ok('contest elimination: an entry whose surviving teams ⊆ a higher entry can’t win', () => {
+  const state = {
+    matches: [
+      { round: 'group', teamA: 'France', teamB: 'Norway', scoreA: 1, scoreB: 0, final: true }, // France +4 (shared)
+      { round: 'group', teamA: 'Spain', teamB: 'Norway', scoreA: 5, scoreB: 0, final: true },   // Spain +8 (leader only)
+    ],
+    fixtures: [{ round: 'r32', teamA: 'France', teamB: 'Japan', status: 'NS' }], // bracket set; France alive, Spain out
+    advancement: {},
+  };
+  const roster = [
+    { name: 'Leader', picks: ['France', 'Spain'] },
+    { name: 'Sub', picks: ['France'] },
+  ];
+  const dead = contestEliminated(state, roster);
+  assert.ok(dead.has('Sub'));      // France is shared; Spain gives Leader an untouchable edge
+  assert.ok(!dead.has('Leader'));  // nobody is ahead of the leader
+});
+
+ok('contest elimination: an entry with exclusive live upside is NOT eliminated', () => {
+  const state = {
+    matches: [{ round: 'group', teamA: 'Spain', teamB: 'Norway', scoreA: 5, scoreB: 0, final: true }], // Leader +8
+    fixtures: [
+      { round: 'r32', teamA: 'Spain', teamB: 'Japan', status: 'NS' },     // Leader's Spain alive
+      { round: 'r32', teamA: 'Argentina', teamB: 'Egypt', status: 'NS' }, // Challenger's Argentina alive (exclusive)
+    ],
+    advancement: {},
+  };
+  const roster = [
+    { name: 'Leader', picks: ['Spain'] },       // 8 now
+    { name: 'Challenger', picks: ['Argentina'] }, // 0 now, but Argentina (T1) can run the table
+  ];
+  const dead = contestEliminated(state, roster);
+  assert.ok(!dead.has('Challenger')); // exclusive Argentina upside > 8 -> still alive
 });
 
 console.log(`\n${pass} tests passed ✓`);

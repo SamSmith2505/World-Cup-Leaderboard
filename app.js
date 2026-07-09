@@ -1,5 +1,5 @@
 // Public page — leaderboard + points-by-team, with throttled auto-sync.
-import { compute, computeTeamPoints, eliminatedSet } from '/lib/scoring.js';
+import { compute, computeTeamPoints, eliminatedSet, contestEliminated } from '/lib/scoring.js';
 import { TIER_MULTIPLIERS, tierOf, canonicalTeam, groupOf, ALL_TEAMS, flagUrl, BUY_IN_USD, LIVE_STATUSES } from '/lib/config.js';
 
 const boardEl = document.getElementById('board');
@@ -11,6 +11,7 @@ const todayList = document.getElementById('todayList');
 const expanded = new Set();
 let lastData = null; // { state, snapshot, roster }
 let elimSet = new Set(); // eliminated teams (canonical names)
+let deadSet = new Set(); // entries mathematically out of the contest (player names)
 let nextByTeam = {};     // canonical team -> next scheduled fixture
 
 // ---- tab switching ---------------------------------------------------------
@@ -42,6 +43,7 @@ async function load() {
     nextByTeam = computeNextMatches(state.fixtures);
 
     const { standings, lastUpdated } = compute(state, lastData.roster);
+    deadSet = contestEliminated(state, lastData.roster, { standings });
     render(standings);
     renderPot(lastData.roster.length);
     renderToday(state);
@@ -76,25 +78,24 @@ function render(standings) {
 }
 
 function rowEl(row) {
+  const dead = deadSet.has(row.name);
   const wrap = document.createElement('div');
-  wrap.className = 'row' + (expanded.has(row.name) ? ' open' : '') + (row.rank === 1 ? ' champ' : '');
+  wrap.className = 'row' + (expanded.has(row.name) ? ' open' : '') + (row.rank === 1 ? ' champ' : '') + (dead ? ' dead' : '');
   const head = document.createElement('button');
   head.className = 'row-head';
 
   // Points gained today (vs the daily baseline snapshot).
   const gain = gainedToday(row.name, row.total);
   const hasLive = row.breakdown.some((t) => t.live);
-  let sub = '';
-  if (gain !== null || hasLive) {
-    const parts = [];
-    if (gain !== null) {
-      const cls = gain > 0 ? 'pos' : gain < 0 ? 'neg' : 'zero';
-      const arrow = gain > 0 ? '▲ ' : gain < 0 ? '▼ ' : '';
-      parts.push(`<span class="today-gain ${cls}">${arrow}${gain > 0 ? '+' : ''}${fmt(gain)} today</span>`);
-    }
-    if (hasLive) parts.push('<span class="live-pts">🔴 live</span>');
-    sub = `<div class="rsub">${parts.join('')}</div>`;
+  const parts = [];
+  if (gain !== null) {
+    const cls = gain > 0 ? 'pos' : gain < 0 ? 'neg' : 'zero';
+    const arrow = gain > 0 ? '▲ ' : gain < 0 ? '▼ ' : '';
+    parts.push(`<span class="today-gain ${cls}">${arrow}${gain > 0 ? '+' : ''}${fmt(gain)} today</span>`);
   }
+  if (hasLive) parts.push('<span class="live-pts">🔴 live</span>');
+  if (dead) parts.push('<span class="dead-tag" title="Mathematically eliminated — another entry finishes ahead no matter the results">✗ eliminated</span>');
+  const sub = parts.length ? `<div class="rsub">${parts.join('')}</div>` : '';
 
   head.innerHTML = `
     <span class="rank rank-${row.rank}">${row.rank}</span>
