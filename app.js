@@ -443,7 +443,7 @@ function scoreCard(x, owners) {
   }
   const round = x.round === 'group'
     ? (x.group ? `Group ${escapeHtml(x.group)}` : 'Group stage')
-    : ({ r32: 'Round of 32', r16: 'Round of 16', qf: 'Quarterfinal', sf: 'Semifinal', final: 'Final' }[x.round] || '');
+    : ({ r32: 'Round of 32', r16: 'Round of 16', qf: 'Quarterfinal', sf: 'Semifinal', third: '3rd Place Playoff', final: 'Final' }[x.round] || '');
   return `<div class="match ${cls}">
     <div class="ms-row">
       ${scoreTeamSide(x.teamA, 'l')}

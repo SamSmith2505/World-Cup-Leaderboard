@@ -274,6 +274,23 @@ ok('winning a knockout match advances the stage the moment it is final', () => {
   assert.equal(t['Spain'].advBonus, cumulativeBonus('qf'));     // 11
 });
 
+ok('3rd-place playoff counts as a KO win but confers no advancement bonus', () => {
+  const s = {
+    matches: [
+      { round: 'sf', teamA: 'England', teamB: 'Argentina', scoreA: 1, scoreB: 0, final: true },   // Argentina loses SF
+      { round: 'third', teamA: 'Argentina', teamB: 'France', scoreA: 2, scoreB: 0, final: true }, // wins 3rd place
+    ],
+    advancement: {},
+  };
+  const adv = derivedAdvancement(s);
+  assert.equal(adv['Argentina'], 'sf');    // reached SF — NOT bumped to 'final' by the playoff win
+  assert.equal(adv['England'], 'final');   // England won the actual semi -> reached the final
+  const t = computeTeamPoints(s);
+  assert.equal(t['Argentina'].src.koWin.pts, 5);            // playoff win still scores 5
+  assert.equal(t['Argentina'].goals, 2);                    // + its goals
+  assert.equal(t['Argentina'].advBonus, cumulativeBonus('sf')); // 23 — no phantom "reached final" bonus
+});
+
 ok('group-stage non-advancers are eliminated once the knockout bracket is set', () => {
   const s = {
     matches: [
