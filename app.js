@@ -67,7 +67,8 @@ function renderPot(n) {
   const el = document.getElementById('pot');
   if (!n) { el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  el.innerHTML = `💰 Current pot: <b>$${(n * BUY_IN_USD).toLocaleString()}</b> <span class="pot-sub">${n} players × $${BUY_IN_USD}</span>`;
+  el.innerHTML = `💰 Current pot: <b>$${(n * BUY_IN_USD).toLocaleString()}</b> <span class="pot-sub">${n} players × $${BUY_IN_USD}</span>
+    <div class="pot-note"><b>NOTE:</b> The third place game is worth 5 points for the winning team, with 1 point per goal. There will be no advancement bonus tied to winning the third place game.</div>`;
 }
 
 // ---- leaderboard -----------------------------------------------------------
