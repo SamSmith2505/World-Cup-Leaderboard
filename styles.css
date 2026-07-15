@@ -75,7 +75,7 @@ main { padding-top: 14px; }
 .pot b { color: var(--gold); font-size: 23px; font-weight: 700; margin: 0 2px; }
 .pot-sub { display: block; color: var(--muted); font-family: var(--font-body); font-weight: 500; font-size: 12px; margin-top: 2px; }
 .pot-note { color: var(--muted); font-family: var(--font-body); font-weight: 400; font-size: 11.5px; line-height: 1.4; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); text-align: left; }
-.pot-note b { color: var(--gold); font-weight: 700; }
+.pot-note b { color: var(--gold); font-weight: 700; font-size: inherit; }
 
 .board { display: flex; flex-direction: column; gap: 10px; }
 .loading { color: var(--muted); padding: 28px 4px; text-align: center; }
